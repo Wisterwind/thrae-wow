@@ -10,7 +10,8 @@ local UIErrorsFrame_AddMessage_Orig, noSpam
 local function SpamCatcher(this, text, ...)
 	if not noSpam or text == ERR_ABILITY_COOLDOWN or 
 	text == ERR_OUT_OF_ENERGY or text == ERR_OUT_OF_RAGE or 
-	text == ERR_SPELL_COOLDOWN or text == SPELL_FAILED_ITEM_NOT_READY then return end
+	text == ERR_SPELL_COOLDOWN or text == SPELL_FAILED_ITEM_NOT_READY or 
+	text == SPELL_FAILED_TARGET_AURASTATE then return end
 	
 	UIErrorsFrame_AddMessage_Orig(this, text, ...)
 end
