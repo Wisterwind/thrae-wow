@@ -7,12 +7,12 @@
 --]]
 
 local UIErrorsFrame_AddMessage_Orig, noSpam
-local function SpamCatcher(this, text, r, g, b, a, holdTime, arg8, arg9)
-	if noSpam and 
-		 text ~= ERR_ABILITY_COOLDOWN and text ~= ERR_OUT_OF_ENERGY and
-		 text ~= ERR_OUT_OF_RAGE then
-		 	UIErrorsFrame_AddMessage_Orig(this, text, r, g, b, a, holdTime, arg8, arg9)
-	end
+local function SpamCatcher(this, text, ...)
+	if not noSpam or text == ERR_ABILITY_COOLDOWN or 
+	text == ERR_OUT_OF_ENERGY or text == ERR_OUT_OF_RAGE or 
+	text == ERR_SPELL_COOLDOWN or text == SPELL_FAILED_ITEM_NOT_READY then return end
+	
+	UIErrorsFrame_AddMessage_Orig(this, text, ...)
 end
 
 -- remove the function declaration if you want it to work all the time.
