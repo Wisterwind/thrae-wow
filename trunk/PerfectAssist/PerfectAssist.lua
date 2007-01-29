@@ -5,29 +5,21 @@
 --]]
 
 local _G = getfenv(0)
-local PerfectRaidTargetFrame = _G.PerfectAssistTargetFrame
+local PerfectAssistTargetFrame = _G.PerfectAssistTargetFrame
 local PerfectAssistLocale = _G.PerfectAssistLocale
 
 local metro = DongleStub("MetrognomeNano-Beta0")
 PerfectAssist = DongleStub("Dongle-Beta0"):New("PerfectAssist")
--- PerfectAssist.rev = tonumber(string.match("$Revision: $", "(%d+)") or 1)
+PerfectAssist.rev = tonumber(string.match("$Revision: $", "(%d+)") or 1)
 
 local PerfectAssist = _G.PerfectAssist
-local assistId, oldPTarg, raidNum, partyNum
-
--- This updates old versions of PerfectTargets on UNIT_TARGET as well as its periodic for assistId only.
-if IsAddOnLoaded("PerfectTargets") then
-	local meta = GetAddOnMetadata("PerfectTargets", "Version")
-	if meta == "2.0" then
-		oldPTarg = true
-	end
-end
+local assistId, raidNum, partyNum, numtargets, assisting
 
 --[[-------------------------------------------------------
 -- Local Functions
 ----------------------------------------------------------]]
 
-local function ValidTarget(unitId)
+local function ValidTargetHostile(unitId)
 	if not unitId or not UnitExists(unitId) or not UnitIsVisible(unitId) 
 	or not UnitExists(unitId.."target") or UnitIsCivilian(unitId.."target") 
 	or UnitIsDead(unitId.."target") or UnitIsCorpse(unitId.."target")
@@ -36,6 +28,18 @@ local function ValidTarget(unitId)
 
 	return true
 end
+
+local function ValidTargetHealer(unitId)
+	if not unitId or not UnitExists(unitId) or not UnitIsVisible(unitId) 
+	or not UnitExists(unitId.."target") or not UnitPlayerControlled(unitId.."target")
+	or UnitIsDead(unitId.."target") or UnitIsCorpse(unitId.."target")
+	or UnitCanAttack("player", unitId.."target")
+	or not UnitIsVisible(unitId.."target") then return false end
+
+	return true
+end
+
+local ValidTarget = ValidTargetHostile
 
 local function UnitStatus(unit)
 	local status
@@ -58,7 +62,7 @@ local function SetAutoAssistId(uid, c, ac)
 	(c == "DRUID" and not (ac == "MAGE" or ac == "WARLOCK" or ac == "HUNTER" or 
 				ac == "WARRIOR" or ac == "SHAMAN" or ac == "PALADIN" ) ) or
 	(c == "PRIEST" and not (ac == "MAGE" or ac == "WARLOCK" or ac == "HUNTER" or 
-					ac == "WARRIOR" or ac == "SHAMAN" or ac == "PALADIN" or ac == "DRUID" ) )  then
+				ac == "WARRIOR" or ac == "SHAMAN" or ac == "PALADIN" or ac == "DRUID" ) )  then
 		--
 		assistId = uid
 		ac = c
@@ -68,17 +72,17 @@ local function SetAutoAssistId(uid, c, ac)
 	return ac
 end
 
-local function SetClick()
-	if not UnitAffectingCombat("player") then
-		if assistId then
-			self.aframe:SetAttribute("unit", assistId)
-			self.aframe:SetAttribute("type1", "assist")
-			self.anchorframe:SetAttribute("unit", assistId)
-			self.anchorframe:SetAttribute("type1", "assist")
-		else
-			self.aframe:SetAttribute("type1", ATTRIBUTE_NOOP)
-			self.anchorframe:SetAttribute("type1", ATTRIBUTE_NOOP)
+local function UpdateAssisting(uid)
+	if not UnitExists(uid) or UnitIsUnit(assistId, uid) then return end
+
+	local tuid = uid.."target"
+	if UnitExists(tuid) and UnitIsUnit(atarget, tuid) then
+		if not assisting[uid] then 
+			numtargets = numtargets + 1
 		end
+	elseif assisting[uid] then
+		assisting[uid] = nil
+		numtargets = numtargets - 1
 	end
 end
 
@@ -107,51 +111,37 @@ end
 function PerfectAssist:UpdateAssistFrame()
 	if ValidTarget(assistId) then
 		local atarget = assistId.."target"
-		local numtargets = 0
-		local uid, tuid
-		if raidNum > 0 then
-			for i = 1,raidNum do
-				uid = "raid"..i
-				tuid = "raid"..i.."target"
-				if ValidTarget(uid) and UnitIsUnit(atarget, tuid) then
-					numtargets = numtargets + 1
-				end
-				uid = "raidpet"..i
-				tuid = "raidpet"..i.."target"
-				if ValidTarget(uid) and UnitIsUnit(atarget, tuid) then
-					numtargets = numtargets + 1
-				end
-			end
-		elseif partyNum > 0 then
-			for i = 1,partyNum do
-				uid = "party"..i
-				tuid = "party"..i.."target"
-				if ValidTarget(uid) and UnitIsUnit(atarget, tuid) then
-					numtargets = numtargets + 1
-				end
-				uid = "partypet"..i
-				tuid = "partypet"..i.."target"
-				if ValidTarget(uid) and UnitIsUnit(atarget, tuid) then
-					numtargets = numtargets + 1
-				end
-			end
-		end
-
 		local isfriend = UnitIsFriend(atarget, "player")
-		local ucombat = not isfriend and UnitAffectingCombat(atarget)
-		local status = not isfriend and UnitStatus(atarget)
-		local hp, hpmax = UnitHealth(atarget), UnitHealthMax(atarget)
-		local hpp = ((hpmax ~= 0) and math.floor((hp / hpmax) * 100)) or 0
+		local hpmax = UnitHealthMax(atarget)
 
-		PerfectAssistTargetFrame:UpdateTargetFrame(self.aframe, atarget, numtargets, hpp, true)
-		PerfectAssistTargetFrame:UpdateTargetFrameColors(self.aframe, UnitAffectingCombat("player"), isfriend, ucombat, status)
-		self.aframe:Show()
-	elseif not assistId then
+		PerfectAssistTargetFrame:UpdateTargetFrame(self.aframe, 
+			atarget, 
+			numtargets, 
+			((hpmax ~= 0) and math.floor((UnitHealth(atarget) / hpmax) * 100)) or 0, 
+			true)
+		PerfectAssistTargetFrame:UpdateTargetFrameColors(self.aframe, 
+			UnitAffectingCombat("player"), 
+			isfriend, 
+			not isfriend and UnitAffectingCombat(atarget), 
+			not isfriend and UnitStatus(atarget))
+	else
 		PerfectAssistTargetFrame:UpdateTargetFrame(self.aframe)
-	elseif not UnitExists(assistId.."target") then
-		PerfectAssistTargetFrame:UpdateTargetFrame(self.aframe, assistId, assistId)
-		PerfectAssistTargetFrame:UpdateTargetFrameColors(self.aframe)
-		self.aframe:Show()
+	end
+end
+
+function PerfectAssist:SetClick()
+	if not UnitAffectingCombat("player") then
+		if assistId then
+			self.aframe:SetAttribute("unit", assistId)
+			self.aframe:SetAttribute("type1", "assist")
+			self.anchorframe:SetAttribute("unit", assistId)
+			self.anchorframe:SetAttribute("type1", "assist")
+
+			self:UNIT_TARGET(nil, assistId) -- reset frame
+		else
+			self.aframe:SetAttribute("type1", ATTRIBUTE_NOOP)
+			self.anchorframe:SetAttribute("type1", ATTRIBUTE_NOOP)
+		end
 	end
 end
 
@@ -159,70 +149,104 @@ end
 -- Events
 ----------------------------------------------------------]]
 
-function PerfectAssist:UNIT_TARGET(unitId)
-	if unitId == assistId then
-		if oldPTarg and PerfectTargets then PerfectTargets:PerfectTargets_UpdateAllTargets() end
-		self:UpdateAssistFrame()
+function PerfectAssist:UNIT_TARGET(event, unitId)
+	if unitId == "target" or (unitId ~= "player" and UnitIsUnit(unitId, "player")) then return end
+
+	if assistId then
+		if UnitIsUnit(unitId, assistId) then
+			local uid,tuid
+			numtargets=0
+			assisting={}
+			if raidNum > 0 then
+				for i = 1,raidNum do
+					UpdateAssisting("raid"..i)
+				end
+			elseif partyNum > 0 then
+				for i = 1,partyNum do
+					UpdateAssisting("party"..i)
+				end
+			end
+			self:UpdateAssistFrame()
+		else
+			UpdateAssisting(unitId)
+		end
 	end
 end
 
-function PerfectAssist:PARTY_MEMBERS_CHANGED()
+function PerfectAssist:PARTY_MEMBERS_CHANGED(event)
 	partyNum = GetNumPartyMembers()
 	raidNum = GetNumRaidMembers() 
-	if raidNum == 0 and partyNum > 0 then
-		if self.asleep then self:Wakeup() end
-		local uid,c,ac
-		for i = 1,partyNum do
-			uid="party"..i
-			if self.db.profile.savedAssist and 
-			self.db.profile.savedAssist == UnitName(uid) then
-				assistId = uid
-				SetClick()
-				return
-			elseif self.db.profile.auto then
-				_,c = UnitClass(uid)
-				ac = SetAutoAssistId(uid, c, ac)
+	if not UnitAffectingCombat("player") then
+		CombatPartyChange = nil
+		if raidNum == 0 and partyNum > 0 then
+			if self.asleep then self:Wakeup() end
+			local uid,c,ac
+			assistId = nil
+			for i = 1,partyNum do
+				uid="party"..i
+				if self.db.profile.savedAssist and 
+				self.db.profile.savedAssist == UnitName(uid) then
+					assistId = uid
+					self:SetClick()
+					return
+				elseif self.db.profile.auto then
+					_,c = UnitClass(uid)
+					ac = SetAutoAssistId(uid, c, ac)
+				end
 			end
+			self:SetClick()
+		elseif raidNum == 0 and partyNum == 0 then
+			assistId = nil
+			self:Sleep()
 		end
-		self.db.profile.savedAssist = UnitName(assistId)
-		SetClick()
-	elseif raidNum == 0 and partyNum == 0 then
-		self:Sleep()
+	else
+		CombatPartyChange = true
 	end
 end
 
-function PerfectAssist:RAID_ROSTER_UPDATE()
+function PerfectAssist:RAID_ROSTER_UPDATE(event)
 	partyNum = GetNumPartyMembers()
 	raidNum = GetNumRaidMembers() 
-	if raidNum > 0 then
-		if self.asleep then self:Wakeup() end
-		local uid,name,c,ac
-		for i = 1,raidNum do
-			uid="raid"..i
-			name,_,_,_,c = GetRaidRosterInfo(i)
-			if self.db.profile.savedAssist and 
-			self.db.profile.savedAssist == name then
-				assistId = uid
-				SetClick()
-				return
-			elseif self.db.profile.auto then
-				ac = SetAutoAssistId(uid, c, ac)
+	if not UnitAffectingCombat("player") then
+		CombatRaidChange = nil
+		if raidNum > 0 then
+			if self.asleep then self:Wakeup() end
+			local uid,name,c,ac
+			assistId = nil
+			for i = 1,raidNum do
+				uid="raid"..i
+				name,_,_,_,c = GetRaidRosterInfo(i)
+				if self.db.profile.savedAssist and 
+				self.db.profile.savedAssist == name then
+					assistId = uid
+					self:SetClick()
+					return
+				elseif self.db.profile.auto then
+					ac = SetAutoAssistId(uid, c, ac)
+				end
 			end
+			self:SetClick()
+		elseif partyNum == 0 then
+			assistId = nil
+			self:Sleep()
 		end
-		self.db.profile.savedAssist = UnitName(assistId)
-		SetClick()
-	elseif partyNum == 0 then
-		self:Sleep()
+	else
+		CombatRaidChange = true
 	end
 end
 
-function PerfectAssist:PLAYER_REGEN_DISABLED()
+function PerfectAssist:PLAYER_REGEN_DISABLED(event)
+	if CombatRaidChange then
+		self:RAID_ROSTER_UPDATE()
+	elseif CombatPartyChange then
+		self:PARTY_MEMBERS_CHANGED()
+	end
 	if self.asleep then
 		self.mainframe:Hide()
 		self.headerback:Hide()
 		self:UnregisterEvent("PLAYER_REGEN_DISABLED")
 	elseif assistId and self.aframe:GetAttribute("unit") ~= assistId then
-		SetClick() 
+		self:SetClick() 
 	end
 end
 
@@ -248,10 +272,10 @@ function PerfectAssist:ReInitialize()
 	raidNum = GetNumRaidMembers()
 
 	self.asleep = nil
-	--self:PARTY_MEMBERS_CHANGED()
 end
 
 function PerfectAssist:Sleep()
+	--[[
 	self:UnregisterEvent("UNIT_TARGET")
 	metro:Stop("PerfectAssistMain")
 	if not UnitAffectingCombat("player") then 
@@ -261,6 +285,8 @@ function PerfectAssist:Sleep()
 	end
 
 	self.asleep = true
+	--]]
+	assisting = nil
 end
 
 function PerfectAssist:Wakeup()
@@ -280,7 +306,7 @@ function PerfectAssist:Initialize()
 	self.defaults = {
 		profile = {
 			auto=true,
-			rate=1
+			rate=0.25
 		},
 	}
 	
@@ -303,9 +329,9 @@ function PerfectAssist:Initialize()
 
 	self.headerback = CreateFrame("Button", nil, UIParent)
 	self.headerback.master = self.mainframe
-	self.headerback:RegisterForDrag("LeftButton")
+	self.headerback:RegisterForDrag("Shift-LeftButton")
 	self.headerback:SetScript("OnDragStart", function()
-		if db and PerfectAssist.db.profile.framelocked then return end
+		if PerfectAssist.db.profile.framelocked then return end
 		this.master:StartMoving()
 		this.master.isMoving = true
 	end)
@@ -331,7 +357,7 @@ end
 
 function PerfectAssist:Enable()
 	self.db = self:InitializeDB("PerfectAssistDB", self.defaults, "all")
-	metro:Register(self, "PerfectAssistMain", self.UpdateAssistFrame, self.db.profile.rate)
+	metro:Register(self, "PerfectAssistMain", "UpdateAssistFrame", self.db.profile.rate)
 	self:ReInitialize()
 end
 
