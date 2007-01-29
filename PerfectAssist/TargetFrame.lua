@@ -181,9 +181,9 @@ end
 
 function PerfectAssistTargetFrame:UpdateTargetFrame(frame, atarget, assistId, targCount, hpp, resetwidth)
 	if not frame then return end
-	frame.unitIdId = atarget
+	frame.unitId = atarget
 	frame.assistId = assistId
-	local mobname = frame.hover and assistId and UnitName(assistId) or atarget and UnitName(atarget) or "*Unknown*"
+	local mobname = frame.hover and assistId and UnitName(assistId) or atarget and UnitName(atarget) or ""
 	local oldname = frame.MobNameText
 	self:UpdateFrameText(frame, "MyTarget", atarget and UnitIsUnit("target", atarget) and ">" or "")
 	self:UpdateFrameText(frame, "PetTarget", atarget and UnitIsUnit("pettarget", atarget) and "<" or "")
@@ -202,9 +202,12 @@ function PerfectAssistTargetFrame:UpdateTargetFrame(frame, atarget, assistId, ta
 		frame.Bar:SetValue(hpp or 0)
 	end
 
-	if frame.shown ~= (atarget ~= nil) then
-		frame.shown = (atarget ~= nil)
-		if frame.shown then frame:Show() else frame:Hide() end
+	if not UnitAffectingCombat("player") then
+		if not atarget then
+			frame:Hide()
+		else
+			frame:Show()
+		end
 	end
 end
 

@@ -4,10 +4,7 @@
 ## Notes: Adds a PerfecTargets-style (minimalistic) unit frame for watching your main assist's target. Requires (and includes) SupplyAndDemand for loading on demand.
 ## Version: 1.0
 
-## RequiredDeps: SupplyAndDemand
 ## OptionalDeps: PerfectTargets
-## LoadOnDemand: 1
-## X-S&D-InParty: true
 
 ## SavedVariables: PerfectAssistDB
 
