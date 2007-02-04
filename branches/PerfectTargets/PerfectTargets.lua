@@ -6,10 +6,8 @@ local PerfectTargetsLocale = _G.PerfectTargetsLocale
 local metro = DongleStub("MetrognomeNano-Beta0")
 PerfectTargets = DongleStub("Dongle-Beta0"):New("PerfectTargets")
 
-local raidNum, partyNum, numtargets
-
 local maxbuffs, maxdebuffs = 32, 40
-local delaycount, numtargets, framecount, ptframe
+local framecount, delaycount, numtargets = 0
 local targets, targetcounts, tanks, tankstrings 
 
 
@@ -329,9 +327,9 @@ local function UnitStatus(unit)
 end
 
 local function FixTargets(i)
-	local tunit,substitute = targets[i].unit
-	targets[i][tunit] = nil
-	for u in targets[i] do
+	local substitute
+	targets[i][ targets[i].unit ] = nil
+	for u,v in pairs(targets[i]) do
 		if u ~= "unit" and u ~= "num" and ValidTarget(u) then
 			targets[i].unit = u
 			substitute = true
@@ -362,11 +360,12 @@ local function CompareTargets(i,t,unit,tuid,knowntarget)
 				return true
 			end
 		end
-	elseif not UnitIsUnit(t.unit.."target",tuid) then
+	elseif t.unit == unit or not UnitIsUnit(t.unit.."target",tuid) then
 		t[unit] = nil
 		t.num = t.num - 1
 		if t.num <= 0 then
 			table.remove(targets, i)
+			numtargets = numtargets - 1
 		elseif t.unit == unit then
 			FixTargets(i)
 		end
@@ -388,14 +387,6 @@ function PerfectTargets:CreateTargetFrame(i)
 	return self.frames[i]
 end
 
-function PerfectTargets:UpdateFrames()
-	for i=1,framecount do
-		self:UpdateUnitFrame(targets[i], self.frames[i], i, i==1)
-	end
-	local targs = math.min(numtargets, self.db.profile.maxframes)
-	self.mainframe:SetHeight(targs > 0 and targs*14 or 14)
-end
-
 function PerfectTargets:UpdateUnitFrame(funit, frame, i, resetwidth)
 	local unit = funit and funit.. "target"
 
@@ -408,8 +399,10 @@ function PerfectTargets:UpdateUnitFrame(funit, frame, i, resetwidth)
 				funit = nil
 				local numframes = math.min(numtargets, self.db.profile.maxframes)
 				if numframes > framecount then framecount = numframes end
+				DEFAULT_CHAT_FRAME:AddMessage("nil unit")
 			else
-				funit = targets[i]
+				funit = targets[i].unit
+				unit = funit.."target"
 			end
 		end
 		if funit then
@@ -437,6 +430,14 @@ function PerfectTargets:UpdateUnitFrame(funit, frame, i, resetwidth)
 		end
 		frame:Show()
 	end
+end
+
+function PerfectTargets:UpdateFrames()
+	for i=1,framecount do
+		self:UpdateUnitFrame(targets[i] and targets[i].unit, self.frames[i], i, i==1)
+	end
+	local targs = math.min(numtargets, self.db.profile.maxframes)
+	self.mainframe:SetHeight(targs > 0 and targs*14 or 14)
 end
 
 
@@ -516,9 +517,11 @@ end
 -- UNIT_TARGET is not fired when a unit goes out of range then changes targets.
 function PerfectTargets:UNIT_TARGET(event,unit)
 	if (unit ~= "player" and UnitIsUnit(unit,"player")) or unit == "target" or unit == "pet" then return end
+	DEFAULT_CHAT_FRAME:AddMessage("UNIT_TARGET")
 
 	local tuid,i,t = unit.."target",0
 	if ValidTarget(unit) then
+		DEFAULT_CHAT_FRAME:AddMessage("Valid Target")
 		local knowntarget
 		while i < numtargets do
 			i = i + 1
@@ -532,11 +535,11 @@ function PerfectTargets:UNIT_TARGET(event,unit)
 				end
 				knowntarget = CompareTargets(i,t,unit,tuid,knowntarget)
 			end
-			if not knowntarget then
-				table.insert(targets, unit)
-				numtargets = numtargets + 1
-				targets[numtargets] = { [unit] = true, ["unit"] = unit, ["num"] = 1 }
-			end
+		end
+		if not knowntarget then
+			table.insert(targets, unit)
+			numtargets = numtargets + 1
+			targets[numtargets] = { [unit] = true, ["unit"] = unit, ["num"] = 1 }
 		end
 	else -- unit now has a non-valid target
 		while i < numtargets do
@@ -592,9 +595,8 @@ function PerfectTargets:ReInitialize()
 end
 
 function PerfectTargets:Sleep()
-	self:UnregisterEvent("UNIT_TARGET")
+	self:UnregisterAllEvents()
 	metro:Stop("PerfectTargetsMain")
-	self:UnregisterEvent("PLAYER_REGEN_DISABLED")
 	self.mainframe:Hide()
 	self.headerback:Hide()
 
@@ -609,7 +611,6 @@ end
 
 function PerfectTargets:Standby()
 	self:Sleep()
-	self:UnregisterAllEvents()
 end
 
 --[[-------------------------------------------------------
@@ -625,12 +626,15 @@ function PerfectTargets:Initialize()
 		},
 	}
 
-	self:CreateMainFrame()
-end
-
-
-function PerfectTargets:Enable()
-	self.db = self:InitializeDB("PerfectTargetsDB", self.defaults, "all")
+	self.db = self:InitializeDB("PerfectTargetsDB", self.defaults)
 	metro:Register(self, "PerfectTargetsMain", "UpdateFrames", self.db.profile.rate)
+
+	self:CreateMainFrame()
+
 	self:ReInitialize()
 end
+
+--[[
+function PerfectTargets:Enable()
+end
+--]]

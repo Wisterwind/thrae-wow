@@ -17,6 +17,7 @@
 ## SavedVariables: PerfectTargetsDB
 
 ## X-Embeds: Dongle
+libs\Dongle\DongleStub.lua
 libs\Dongle\Dongle.lua
 libs\Dongle\DongleUtils.lua
 
