@@ -76,7 +76,7 @@ local function UpdateAssisting(uid)
 	if not UnitExists(uid) or UnitIsUnit(assistId, uid) then return end
 
 	local tuid = uid.."target"
-	if UnitExists(tuid) and UnitIsUnit(atarget, tuid) then
+	if UnitExists(tuid) and UnitIsUnit(assistId.."target", tuid) then
 		if not assisting[uid] then 
 			numtargets = numtargets + 1
 		end
