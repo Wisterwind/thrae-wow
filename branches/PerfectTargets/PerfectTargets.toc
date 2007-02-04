@@ -1,0 +1,24 @@
+## Interface: 20005
+
+## Title: Perfect Targets
+## Notes: Minimalistic set of target frames.
+## Author: Tekkub Stoutwrithe + Thrae
+## Version: 3.0
+## X-Website: http://www.wowace.com/
+## X-Email: tekkub@gmail.com
+## X-Category: UnitFrame
+
+## LoadOnDemand: 1
+## X-S&D-InParty: true
+
+## RequiredDeps: SupplyAndDemand
+## OptionalDeps: Dongle
+
+## SavedVariables: PerfectTargetsDB
+
+## X-Embeds: Dongle
+libs\Dongle\Dongle.lua
+libs\Dongle\DongleUtils.lua
+
+PerfectTargetsLocale.lua
+PerfectTargets.lua
