@@ -14,6 +14,87 @@ local _
 PerfectTargets = DongleStub("Dongle-Beta0"):New("PerfectTargets")
 
 --[[-------------------------------------------------------
+-- Local Functions
+----------------------------------------------------------]]
+
+local function ValidTargetHostile(unitId)
+	if not unitId or not UnitExists(unitId) or not UnitIsVisible(unitId) 
+	or not UnitExists(unitId.."target") or UnitIsCivilian(unitId.."target") 
+	or UnitIsDead(unitId.."target") or UnitIsCorpse(unitId.."target")
+	or not UnitCanAttack("player", unitId.."target")
+	or not UnitIsVisible(unitId.."target") then return false end
+
+	return true
+end
+
+local function ValidTargetHealer(unitId)
+	if not unitId or not UnitExists(unitId) or not UnitIsVisible(unitId) 
+	or not UnitExists(unitId.."target") or not UnitPlayerControlled(unitId.."target")
+	or UnitIsDead(unitId.."target") or UnitIsCorpse(unitId.."target")
+	or UnitCanAttack("player", unitId.."target")
+	or not UnitIsVisible(unitId.."target") then return false end
+
+	return true
+end
+
+local ValidTarget = ValidTargetHostile
+
+local function UnitStatus(unit)
+	local status
+	for i=1,maxdebuffs do
+		status = PerfectTargetsLocale[UnitDebuff(unit, i)]
+		if status then
+			return (status == 2 and status) or 1
+		end
+	end
+end
+
+local function CheckForDups(goodt,tuid)
+	for j,t in pairs(targets) do
+		if t ~= goodt then
+			if not ValidTarget(t.unit) or UnitIsUnit(tuid,t.unit.."target") then
+				return FixTargets(j)
+			end
+		end
+	end
+	return true
+end
+
+local function FixTargets(i,tuid)
+	local substitute
+	targets[i][ targets[i].unit ] = nil
+	targets[i].unit = nil
+	if tuid then 
+		targets[i].unit = tuid
+		substitute = true
+	else
+		for u,_ in pairs(targets[i]) do
+			if u ~= "unit" and u ~= "num" then
+				if ValidTarget(u) then
+					targets[i].unit = u
+					tuid = u.."target"
+					substitute = true
+					break
+				else
+					targets[i][u] = nil
+				end
+			end
+		end
+	end
+	if not substitute then
+		table.remove(targets, i)
+		numtargets = numtargets - 1
+		return false
+	else
+		CheckForDups(targets[i],tuid)
+	end
+
+	targets[i].num = targets[i].num - 1
+	return true
+end
+
+
+--[[-------------------------------------------------------
 -- Perfect Targets Target Frame
 ---------------------------------------------------------]]
 
@@ -175,11 +256,13 @@ function ptframe:CreateTargetFrame(i, mainframe, anchor)
 	t:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT")
 	t:SetPoint("TOPRIGHT", anchor, "BOTTOMRIGHT")
 	t:SetPoint("BOTTOM", t.MobName, "BOTTOM")
+
 	t:SetBackdrop({
 		bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background", tile = true, tileSize = 32,
 		edgeFile = "", edgeSize = 0,
 		insets = {left = 0, right = -2, top = 0, bottom = -2},
 		})
+
 	return t
 end
 
@@ -203,7 +286,7 @@ function ptframe:UpdateTargetFrame(frame, unit, tank, targCount, hpp, duptank, t
 	self:UpdateFrameText(frame, "MyTarget", unit and UnitIsUnit("target", unit) and ">" or "")
 	self:UpdateFrameText(frame, "PetTarget", unit and UnitIsUnit("pettarget", unit) and not duptank and "<" or "")
 	self:UpdateFrameText(frame, "Targetted", not duptank and targCount or "-")
-	self:UpdateFrameText(frame, "MobName", mobname)
+	self:UpdateFrameText(frame, "MobName", mobname, isfocus)
 	self:UpdateFrameText(frame, "HPP", hpp and string.format("%d%%", hpp) or "")
 	self:UpdateFrameText(frame, "Tanks", tankstring or "")
 	self:UpdateFrameIcon(frame, unit and GetRaidTargetIndex(unit) or 0)
@@ -227,7 +310,6 @@ end
 function ptframe:UpdateFrameText(frame, elem, newtext)
 	if not frame or not elem or not frame[elem] then return end
 	if frame[elem.."Text"] == newtext then return end
-
 	frame[elem.."Text"] = newtext
 	frame[elem]:SetText(newtext)
 end
@@ -293,86 +375,6 @@ end
 
 
 --[[-------------------------------------------------------
--- Local Functions
-----------------------------------------------------------]]
-
-local function ValidTargetHostile(unitId)
-	if not unitId or not UnitExists(unitId) or not UnitIsVisible(unitId) 
-	or not UnitExists(unitId.."target") or UnitIsCivilian(unitId.."target") 
-	or UnitIsDead(unitId.."target") or UnitIsCorpse(unitId.."target")
-	or not UnitCanAttack("player", unitId.."target")
-	or not UnitIsVisible(unitId.."target") then return false end
-
-	return true
-end
-
-local function ValidTargetHealer(unitId)
-	if not unitId or not UnitExists(unitId) or not UnitIsVisible(unitId) 
-	or not UnitExists(unitId.."target") or not UnitPlayerControlled(unitId.."target")
-	or UnitIsDead(unitId.."target") or UnitIsCorpse(unitId.."target")
-	or UnitCanAttack("player", unitId.."target")
-	or not UnitIsVisible(unitId.."target") then return false end
-
-	return true
-end
-
-local ValidTarget = ValidTargetHostile
-
-local function UnitStatus(unit)
-	local status
-	for i=1,maxdebuffs do
-		status = PerfectTargetsLocale[UnitDebuff(unit, i)]
-		if status then
-			return (status == 2 and status) or 1
-		end
-	end
-end
-
-local function CheckForDups(goodt,tuid)
-	for j,t in pairs(targets) do
-		if t ~= goodt then
-			if not ValidTarget(t.unit) or UnitIsUnit(tuid,t.unit.."target") then
-				return FixTargets(j)
-			end
-		end
-	end
-	return true
-end
-
-local function FixTargets(i,tuid)
-	local substitute
-	targets[i][ targets[i].unit ] = nil
-	targets[i].unit = nil
-	if tuid then 
-		targets[i].unit = tuid
-		substitute = true
-	else
-		for u,_ in pairs(targets[i]) do
-			if u ~= "unit" and u ~= "num" then
-				if ValidTarget(u) then
-					targets[i].unit = u
-					tuid = u.."target"
-					substitute = true
-					break
-				else
-					targets[i][u] = nil
-				end
-			end
-		end
-	end
-	if not substitute then
-		table.remove(targets, i)
-		numtargets = numtargets - 1
-		return false
-	else
-		CheckForDups(targets[i],tuid)
-	end
-
-	targets[i].num = targets[i].num - 1
-	return true
-end
-
---[[-------------------------------------------------------
 -- Frame Manipulation
 ----------------------------------------------------------]]
 
@@ -416,7 +418,7 @@ function PerfectTargets:UpdateUnitFrame(funit, frame, i, resetwidth)
 					targetcounts[i], 
 					(hpmax ~= 0) and math.floor((hp / hpmax) * 100) or 0, 
 					duptank, 
-					tankstrings[i], 
+					tankstrings[i],
 					resetwidth)
 
 			ptframe:UpdateTargetFrameColors(
@@ -426,12 +428,21 @@ function PerfectTargets:UpdateUnitFrame(funit, frame, i, resetwidth)
 					isfriend, 
 					not isfriend and UnitAffectingCombat(unit),
 					not isfriend and UnitStatus(unit))
+			if UnitExists("focus") and UnitIsUnit(funit, "focus") --and 
+			   --ValidTarget("player") and not UnitIsUnit(unit, "playertarget") 
+			   then
+			   	self.FocusLeft:Show()
+				self.FocusRight:Show()
+			end
+
 		end
 		frame:Show()
 	end
 end
 
 function PerfectTargets:UpdateFrames()
+	self.FocusLeft:Hide()
+	self.FocusRight:Hide()
 	for i=1,framecount do
 		self:UpdateUnitFrame(targets[i] and targets[i].unit, self.frames[i], i, i==1)
 	end
@@ -505,6 +516,18 @@ function PerfectTargets:CreateMainFrame()
 		insets = {left = 0, right = -2, top = -2, bottom = -2},
 		})
 	self.headerback:Show()
+
+	self.FocusLeft = self.mainframe:CreateFontString(nil, "ARTWORK")
+	self.FocusLeft:SetFontObject(GameFontHighlightSmall)
+	self.FocusLeft:SetText("|!|")
+	self.FocusLeft:SetPoint("TOPRIGHT", self.anchorframe, "BOTTOMLEFT", -1, 0)
+	self.FocusLeft:Hide()
+
+	self.FocusRight = self.mainframe:CreateFontString(nil, "ARTWORK")
+	self.FocusRight:SetFontObject(GameFontHighlightSmall)
+	self.FocusRight:SetText("|!|")
+	self.FocusRight:SetPoint("TOPLEFT", self.anchorframe, "BOTTOMRIGHT", 1, 0)
+	self.FocusRight:Hide()
 end
 
 --[[-------------------------------------------------------
@@ -515,7 +538,7 @@ end
 -- Note that targets[i].unit may or may not be valid due to visability issues.
 -- UNIT_TARGET is not fired when a unit goes out of range then changes targets.
 function PerfectTargets:UNIT_TARGET(event,unit)
-	if (unit ~= "player" and UnitIsUnit(unit,"player")) or unit == "target" or unit == "pet" then return end
+	if (unit ~= "player" and UnitIsUnit(unit,"player")) or unit == "target" or unit == "focus" then return end
 
 	local tuid = unit.."target"
 	if ValidTarget(unit) then
@@ -527,6 +550,9 @@ function PerfectTargets:UNIT_TARGET(event,unit)
 						t[unit] = true
 						t.num = t.num + 1
 						knowntarget = true
+						if UnitIsUnit(unit, "focus") and i ~= 1 then
+							table.insert(targets, 1, table.remove(targets, i) )
+						end
 						break
 					end
 				end
@@ -536,9 +562,12 @@ function PerfectTargets:UNIT_TARGET(event,unit)
 		end
 
 		if not knowntarget then
-			table.insert(targets, unit)
 			numtargets = numtargets + 1
-			targets[numtargets] = { [unit] = true, ["unit"] = unit, ["num"] = 1 }
+			if UnitIsUnit(unit, "focus") then
+				table.insert(targets, 1, { [unit] = true, ["unit"] = unit, ["num"] = 1 } )
+			else
+				table.insert(targets, { [unit] = true, ["unit"] = unit, ["num"] = 1 } )
+			end
 		end
 	else -- unit now has a non-valid target
 		for i,t in pairs(targets) do
