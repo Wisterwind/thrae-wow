@@ -1,0 +1,15 @@
+## Interface: 30000
+
+## Title: Perfect Targets (Core LoD)
+## Notes: LoadOnDemand stub for PerfectTarget's Core.
+## Author: Tekkub Stoutwrithe + Thrae
+## Version: 3.0
+## X-Website: http://www.wowace.com/
+## X-Email: tekkub@gmail.com
+## X-Category: UnitFrame
+
+## LoadOnDemand: 1
+## X-KBL-InParty: true
+## Dependencies: PerfectTargets
+
+..\PerfectTargets\modules\Core\Files.xml

@@ -1,0 +1,16 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.blizzard.com/wow/ui/">
+
+	local name = "PerfectTargets-Core"
+	local module = Capsule:New(name, "party")
+	local loaded = IsAddOnLoaded(name)
+
+	if loaded or not GetAddonInfo(name) then
+		-- Libs
+		<Script file="..\..\libs\Dongle\DongleUtils.lua" />
+
+		-- Files
+		<Script file="CoreLocale.lua" />
+		<Script file="Core.lua" />
+	end
+</Ui>
