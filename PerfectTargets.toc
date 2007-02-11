@@ -8,10 +8,6 @@
 ## X-Email: tekkub@gmail.com
 ## X-Category: UnitFrame
 
-## LoadOnDemand: 1
-## X-S&D-InParty: true
-
-## RequiredDeps: SupplyAndDemand
 ## OptionalDeps: Dongle
 
 ## SavedVariables: PerfectTargetsDB
