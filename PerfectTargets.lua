@@ -4,12 +4,14 @@ local _G = getfenv(0)
 local PerfectTargetsLocale = _G.PerfectTargetsLocale
 
 local metro = DongleStub("MetrognomeNano-Beta0")
-PerfectTargets = DongleStub("Dongle-Beta0"):New("PerfectTargets")
 
 local maxbuffs, maxdebuffs = 32, 40
 local framecount, delaycount, numtargets = 0
 local targets, targetcounts, tanks, tankstrings 
 
+local _
+
+PerfectTargets = DongleStub("Dongle-Beta0"):New("PerfectTargets")
 
 --[[-------------------------------------------------------
 -- Perfect Targets Target Frame
@@ -326,50 +328,48 @@ local function UnitStatus(unit)
 	end
 end
 
-local function FixTargets(i)
+local function CheckForDups(goodt,tuid)
+	for j,t in pairs(targets) do
+		if t ~= goodt then
+			if not ValidTarget(t.unit) or UnitIsUnit(tuid,t.unit.."target") then
+				return FixTargets(j)
+			end
+		end
+	end
+	return true
+end
+
+local function FixTargets(i,tuid)
 	local substitute
 	targets[i][ targets[i].unit ] = nil
-	for u,v in pairs(targets[i]) do
-		if u ~= "unit" and u ~= "num" and ValidTarget(u) then
-			targets[i].unit = u
-			substitute = true
-			break
+	targets[i].unit = nil
+	if tuid then 
+		targets[i].unit = tuid
+		substitute = true
+	else
+		for u,_ in pairs(targets[i]) do
+			if u ~= "unit" and u ~= "num" then
+				if ValidTarget(u) then
+					targets[i].unit = u
+					tuid = u.."target"
+					substitute = true
+					break
+				else
+					targets[i][u] = nil
+				end
+			end
 		end
 	end
 	if not substitute then
 		table.remove(targets, i)
 		numtargets = numtargets - 1
 		return false
+	else
+		CheckForDups(targets[i],tuid)
 	end
 
 	targets[i].num = targets[i].num - 1
 	return true
-end
-
-local function CompareTargets(i,t,unit,tuid,knowntarget)
-	if not t[unit] then
-		if UnitIsUnit(t.unit.."target",tuid) then
-			if knowntarget then -- duplicate due to visibility issue
-				while UnitIsUnit(t.unit.."target",tuid) do
-					FixTargets(i)
-				end
-			else
-				t[unit] = true
-				t.unit = unit
-				t.num = t.num + 1
-				return true
-			end
-		end
-	elseif t.unit == unit or not UnitIsUnit(t.unit.."target",tuid) then
-		t[unit] = nil
-		t.num = t.num - 1
-		if t.num <= 0 then
-			table.remove(targets, i)
-			numtargets = numtargets - 1
-		elseif t.unit == unit then
-			FixTargets(i)
-		end
-	end
 end
 
 --[[-------------------------------------------------------
@@ -399,7 +399,6 @@ function PerfectTargets:UpdateUnitFrame(funit, frame, i, resetwidth)
 				funit = nil
 				local numframes = math.min(numtargets, self.db.profile.maxframes)
 				if numframes > framecount then framecount = numframes end
-				DEFAULT_CHAT_FRAME:AddMessage("nil unit")
 			else
 				funit = targets[i].unit
 				unit = funit.."target"
@@ -517,45 +516,37 @@ end
 -- UNIT_TARGET is not fired when a unit goes out of range then changes targets.
 function PerfectTargets:UNIT_TARGET(event,unit)
 	if (unit ~= "player" and UnitIsUnit(unit,"player")) or unit == "target" or unit == "pet" then return end
-	DEFAULT_CHAT_FRAME:AddMessage("UNIT_TARGET")
 
-	local tuid,i,t = unit.."target",0
+	local tuid = unit.."target"
 	if ValidTarget(unit) then
-		DEFAULT_CHAT_FRAME:AddMessage("Valid Target")
 		local knowntarget
-		while i < numtargets do
-			i = i + 1
-			t = targets[i]
-
+		for i,t in pairs(targets) do
 			if ValidTarget(t.unit) then
-				knowntarget = CompareTargets(i,t,unit,tuid,knowntarget)
-			else -- prune bad target due to visibility issue
-				if not FixTargets(i) then
-					t = targets[i] -- we've pruned, so reset reference
+				if UnitIsUnit(tuid, t.unit.."target") then
+					if CheckForDups(t, t.unit.."target") then
+						t[unit] = true
+						t.num = t.num + 1
+						knowntarget = true
+						break
+					end
 				end
-				knowntarget = CompareTargets(i,t,unit,tuid,knowntarget)
+			else -- primary targetId became invalid due to visability issues
+				FixTargets(i)
 			end
 		end
+
 		if not knowntarget then
 			table.insert(targets, unit)
 			numtargets = numtargets + 1
 			targets[numtargets] = { [unit] = true, ["unit"] = unit, ["num"] = 1 }
 		end
 	else -- unit now has a non-valid target
-		while i < numtargets do
-			i = i + 1
-			t = targets[i]
-
+		for i,t in pairs(targets) do
 			if t.unit == unit then
 				FixTargets(i)
-			else
-				if t[unit] then
-					t[unit] = nil
-					t.num = t.num - 1
-				end
-				if not ValidTarget(t.unit) then -- prune bad target due to visibility issue
-					FixTargets(i)
-				end
+			elseif t[unit] then
+				t[unit] = nil
+				t.num = t.num - 1
 			end
 		end
 	end
