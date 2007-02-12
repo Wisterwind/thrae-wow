@@ -459,8 +459,9 @@ function VitalWatch:UNIT_HEALTH(unit)
 			elseif UnitIsPlayer(unit) then 
 				local _,c = UnitClass(unit)
 				local name = (UnitName(unit)) or "Name Unknown"
-				if ((db["HealthWatch"] and db["HealthWatch"] > 1 and UnitInParty(unit)) or 
-						(db["HealthWatch"] == 3 and UnitInRaid(unit))) and 
+				if ((db["HealthWatch"] and db["HealthWatch"] > 1 and UnitInParty(unit) and 
+				   (not playerInBG or not UnitInRaid(unit) or UnitIsVisible(unit))) or 
+						(db["HealthWatch"] == 3 and UnitInRaid(unit))) and UnitIsVisible(unit) and
 					 (not db["HealthNoWatchClass"] or not db["HealthNoWatchClass"][c]) and 
 					 (not db["HealthNoWatchName"] or not db["HealthNoWatchName"][name]) then
 					 		-------
@@ -469,7 +470,7 @@ function VitalWatch:UNIT_HEALTH(unit)
 				end
 			elseif db["PetHealthWatch"] ~= 1 and unit == "pet" then
 				self:ProcessUnitHealthOther(unit, (UnitName(unit)) or "Name Unknown", nil, VitalWatchLocale.MyPetTag)
-			elseif (db["PetHealthWatch"] and db["PetHealthWatch"] > 1 and UnitPlayerOrPetInParty(unit)) or
+			elseif UnitIsVisible(unit) and (db["PetHealthWatch"] and db["PetHealthWatch"] > 1 and UnitPlayerOrPetInParty(unit)) or
 						 (db["PetHealthWatch"] == 3 and UnitPlayerOrPetInRaid(unit)) then
 				self:ProcessUnitHealthOther(unit, (UnitName(unit)) or "Name Unknown", nil, VitalWatchLocale.PetTag)
 			end
@@ -593,8 +594,9 @@ function VitalWatch:UNIT_MANA(unit)
 			elseif UnitIsPlayer(unit) then 
 				local _,c = UnitClass(unit)
 				local name = (UnitName(unit)) or "Name Unknown"
-				if ((db["ManaWatch"] and db["ManaWatch"] > 1 and UnitInParty(unit)) or 
-						(db["ManaWatch"] == 3 and UnitInRaid(unit))) and 
+				if ((db["ManaWatch"] and db["ManaWatch"] > 1 and UnitInParty(unit) and 
+				   (not playerInBG or not UnitInRaid(unit) or UnitIsVisible(unit))) or 
+						(db["ManaWatch"] == 3 and UnitInRaid(unit) and UnitIsVisible(unit))) and 
 					 (not db["ManaNoWatchClass"] or not db["ManaNoWatchClass"][c]) and 
 					 (not db["ManaNoWatchName"] or not db["ManaNoWatchName"][name]) then
 							local percentage = UnitMana(unit) / UnitManaMax(unit)
