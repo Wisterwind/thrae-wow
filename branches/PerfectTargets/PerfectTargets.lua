@@ -63,6 +63,7 @@ end
 
 FixTargets = function(i,tuid)
 	local substitute
+	local oldunit = targets[i].unit
 	targets[i][ targets[i].unit ] = nil
 	targets[i].unit = nil
 	if tuid then 
@@ -78,6 +79,9 @@ FixTargets = function(i,tuid)
 					break
 				else
 					targets[i][u] = nil
+					if not UnitIsUnit(u, "player") then
+						targets[i].num = targets[i].num - 1
+					end
 				end
 			end
 		end
@@ -90,7 +94,9 @@ FixTargets = function(i,tuid)
 		CheckForDups(targets[i],tuid)
 	end
 
-	targets[i].num = targets[i].num - 1
+	if not UnitIsUnit(oldunit, "player") then
+		targets[i].num = targets[i].num - 1
+	end
 	return true
 end
 
@@ -286,7 +292,7 @@ function ptframe:UpdateTargetFrame(frame, unit, tank, targCount, hpp, duptank, t
 	local oldname = frame.MobNameText
 	self:UpdateFrameText(frame, "MyTarget", unit and UnitIsUnit("target", unit) and ">" or "")
 	self:UpdateFrameText(frame, "PetTarget", unit and UnitIsUnit("pettarget", unit) and not duptank and "<" or "")
-	self:UpdateFrameText(frame, "Targetted", not duptank and targCount or "-")
+	self:UpdateFrameText(frame, "Targetted", not duptank and targCount and targCount > 0 or "-")
 	self:UpdateFrameText(frame, "MobName", mobname, isfocus)
 	self:UpdateFrameText(frame, "HPP", hpp and string.format("%d%%", hpp) or "")
 	self:UpdateFrameText(frame, "Tanks", tankstring or "")
@@ -548,7 +554,9 @@ function PerfectTargets:UNIT_TARGET(event,unit)
 				if UnitIsUnit(tuid, t.unit.."target") then
 					if CheckForDups(t, t.unit.."target") then
 						t[unit] = true
-						t.num = t.num + 1
+						if not UnitIsUnit(unit, "player") then
+							t.num = t.num + 1
+						end
 						knowntarget = true
 						if UnitIsUnit(unit, "focus") and i ~= 1 then
 							table.insert(targets, 1, table.remove(targets, i) )
@@ -564,9 +572,11 @@ function PerfectTargets:UNIT_TARGET(event,unit)
 		if not knowntarget then
 			numtargets = numtargets + 1
 			if UnitIsUnit(unit, "focus") then
-				table.insert(targets, 1, { [unit] = true, ["unit"] = unit, ["num"] = 1 } )
+				table.insert(targets, 1, { [unit] = true, ["unit"] = unit, 
+							   ["num"] = ((not UnitIsUnit(unit, "player") and 1) or 0) } )
 			else
-				table.insert(targets, { [unit] = true, ["unit"] = unit, ["num"] = 1 } )
+				table.insert(targets, { [unit] = true, ["unit"] = unit,
+							["num"] = ((not UnitIsUnit(unit, "player") and 1) or 0) } )
 			end
 		end
 	else -- unit now has a non-valid target
@@ -575,7 +585,9 @@ function PerfectTargets:UNIT_TARGET(event,unit)
 				FixTargets(i)
 			elseif t[unit] then
 				t[unit] = nil
-				t.num = t.num - 1
+				if not UnitIsUnit(unit, "player") then
+					t.num = t.num - 1
+				end
 			end
 		end
 	end
