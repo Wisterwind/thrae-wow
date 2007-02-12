@@ -7,7 +7,7 @@ local metro = DongleStub("MetrognomeNano-Beta0")
 
 local maxbuffs, maxdebuffs = 32, 40
 local framecount, delaycount, numtargets = 0
-local targets, targetcounts, tanks, tankstrings 
+local targets, tanks, tankstrings 
 
 local _
 
@@ -49,7 +49,8 @@ local function UnitStatus(unit)
 	end
 end
 
-local function CheckForDups(goodt,tuid)
+local FixTargets, CheckForDups
+CheckForDups = function(goodt,tuid)
 	for j,t in pairs(targets) do
 		if t ~= goodt then
 			if not ValidTarget(t.unit) or UnitIsUnit(tuid,t.unit.."target") then
@@ -60,7 +61,7 @@ local function CheckForDups(goodt,tuid)
 	return true
 end
 
-local function FixTargets(i,tuid)
+FixTargets = function(i,tuid)
 	local substitute
 	targets[i][ targets[i].unit ] = nil
 	targets[i].unit = nil
@@ -409,13 +410,12 @@ function PerfectTargets:UpdateUnitFrame(funit, frame, i, resetwidth)
 		if funit then
 			local isfriend = UnitIsFriend(unit, "player")
 			local hp, hpmax = UnitHealth(unit), UnitHealthMax(unit)
-			local numtext = targetcounts[i] or 0
 
 			ptframe:UpdateTargetFrame(
 					frame, 
 					unit, 
 					tanks[funit] and funit, 
-					targetcounts[i], 
+					targets[i].num or 0, 
 					(hpmax ~= 0) and math.floor((hp / hpmax) * 100) or 0, 
 					duptank, 
 					tankstrings[i],
@@ -587,7 +587,7 @@ end
 
 function PerfectTargets:ResetFrames()
 	delaycount, numtargets = 0, 0
-	targets, targetcounts, tanks, tankstrings = {}, {}, {}, {}
+	targets, tanks, tankstrings = {}, {}, {}
 	self:UpdateFrames()
 end
 
@@ -610,7 +610,7 @@ function PerfectTargets:ReInitialize()
 	self.headerback:Show()
 
 	delaycount, numtargets = 0, 0
-	targets, targetcounts, tanks, tankstrings = {}, {}, {}, {}
+	targets, tanks, tankstrings = {}, {}, {}
 	self.asleep = nil
 end
 
@@ -622,7 +622,7 @@ function PerfectTargets:Sleep()
 
 	self.asleep = true
 	delaycount, numtargets = nil,nil
-	targets, targetcounts, tanks, tankstrings = nil,nil,nil,nil
+	targets, tanks, tankstrings = nil,nil,nil
 end
 
 function PerfectTargets:Wakeup()
