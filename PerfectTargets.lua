@@ -6,7 +6,7 @@ local PerfectTargetsLocale = _G.PerfectTargetsLocale
 local metro = DongleStub("MetrognomeNano-Beta0")
 
 local maxbuffs, maxdebuffs = 32, 40
-local framecount, delaycount, numtargets = 0
+local framecount, numtargets = 0
 local targets, tanks, tankstrings 
 
 local _
@@ -63,8 +63,10 @@ end
 
 FixTargets = function(i,tuid)
 	local substitute
-	local oldunit = targets[i].unit
 	targets[i][ targets[i].unit ] = nil
+	if not UnitIsUnit(targets[i].unit, "player") then
+		targets[i].num = targets[i].num - 1
+	end
 	targets[i].unit = nil
 	if tuid then 
 		targets[i].unit = tuid
@@ -94,9 +96,6 @@ FixTargets = function(i,tuid)
 		CheckForDups(targets[i],tuid)
 	end
 
-	if not UnitIsUnit(oldunit, "player") then
-		targets[i].num = targets[i].num - 1
-	end
 	return true
 end
 
@@ -124,7 +123,7 @@ local ptframe = {
 function ptframe:CreateAnchorFrame(mainframe)
 	if not mainframe then return end
 
-	local t = CreateFrame("Button", nil, mainframe)
+	local t = CreateFrame("Frame", nil, mainframe)
 	t:Hide()
 
 	t.MyTarget = t:CreateFontString(nil, "ARTWORK")
@@ -191,7 +190,7 @@ end
 
 function ptframe:CreateTargetFrame(i, mainframe, anchor)
 	if not i or not mainframe or not anchor then return end
-	local t = CreateFrame("Button", nil, mainframe)
+	local t = CreateFrame("Frame", nil, mainframe)
 	t:Hide()
 
 	t.Targetted = t:CreateFontString(nil, "ARTWORK")
@@ -434,8 +433,8 @@ function PerfectTargets:UpdateUnitFrame(funit, frame, i, resetwidth)
 					isfriend, 
 					not isfriend and UnitAffectingCombat(unit),
 					not isfriend and UnitStatus(unit))
-			if UnitExists("focus") and UnitIsUnit(funit, "focus") --and 
-			   --ValidTarget("player") and not UnitIsUnit(unit, "playertarget") 
+			if UnitExists("focus") and UnitIsUnit(funit, "focus") and 
+			   ValidTarget("player") and not UnitIsUnit(unit, "playertarget") 
 			   then
 			   	self.FocusLeft:Show()
 				self.FocusRight:Show()
@@ -598,9 +597,13 @@ function PerfectTargets:UNIT_TARGET(event,unit)
 end
 
 function PerfectTargets:ResetFrames()
-	delaycount, numtargets = 0, 0
-	targets, tanks, tankstrings = {}, {}, {}
-	self:UpdateFrames()
+	if GetNumPartyMembers() <= 0 and GetNumRaidMembers() <= 0 then
+		self:Sleep()
+	else
+		numtargets = 0
+		targets, tanks, tankstrings = {}, {}, {}
+		self:UpdateFrames()
+	end
 end
 
 --[[-------------------------------------------------------
@@ -621,8 +624,7 @@ function PerfectTargets:ReInitialize()
 	self.mainframe:Show()
 	self.headerback:Show()
 
-	delaycount, numtargets = 0, 0
-	targets, tanks, tankstrings = {}, {}, {}
+	self:ResetFrames()
 	self.asleep = nil
 end
 
@@ -633,8 +635,11 @@ function PerfectTargets:Sleep()
 	self.headerback:Hide()
 
 	self.asleep = true
-	delaycount, numtargets = nil,nil
+	numtargets = nil
 	targets, tanks, tankstrings = nil,nil,nil
+
+	self:RegisterEvent("PARTY_MEMBERS_CHANGED", "Wakeup")
+	self:RegisterEvent("RAID_ROSTER_UPDATE", "Wakeup")
 end
 
 function PerfectTargets:Wakeup()
@@ -643,6 +648,14 @@ end
 
 function PerfectTargets:Standby()
 	self:Sleep()
+end
+
+function PerfectTargets:FirstLoad()
+	metro:Register(self, "PerfectTargetsMain", "UpdateFrames", self.db.profile.rate)
+
+	self:CreateMainFrame()
+
+	self:ReInitialize()
 end
 
 --[[-------------------------------------------------------
@@ -659,11 +672,9 @@ function PerfectTargets:Initialize()
 	}
 
 	self.db = self:InitializeDB("PerfectTargetsDB", self.defaults)
-	metro:Register(self, "PerfectTargetsMain", "UpdateFrames", self.db.profile.rate)
-
-	self:CreateMainFrame()
-
-	self:ReInitialize()
+	
+	self:RegisterEvent("PARTY_MEMBERS_CHANGED", "FirstLoad")
+	self:RegisterEvent("RAID_ROSTER_UPDATE", "FirstLoad")
 end
 
 --[[
