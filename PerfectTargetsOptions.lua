@@ -3,7 +3,9 @@ local _G = getfenv(0)
 local L = _G.PerfectTargetsLocale
 local PerfectTargets = _G.PerfectTargets
 
-local function MsgReport(name, value, changed)
+local lname
+
+local function MsgReport(obj, value, changed)
 	if not name then return end
 	if value == nil then
 		value = "|cFFFF3333" .. L["Off"] .. "|r"
@@ -11,11 +13,11 @@ local function MsgReport(name, value, changed)
 		value = "|cFF33FF33" .. L["On"] .. "|r"
 	end
 
-	DEFAULT_CHAT_FRAME:AddMessage("|cFF33FF99"..L["_name"].."|r: [|cFF9999FF" .. name ..  "|r] " .. (changed and L["is now"] or L["is currently"]) .. " [|cFFFFFF33" .. value .. "|r]")
+	DEFAULT_CHAT_FRAME:AddMessage("|cFF33FF99"..lname.."|r: [|cFF9999FF" .. obj ..  "|r] " .. (changed and L["is now"] or L["is currently"]) .. " [|cFFFFFF33" .. value .. "|r]")
 end
 
-local function MsgError(name)
-	DEFAULT_CHAT_FRAME:AddMessage("|cFF33FF99"..L["_name"].."|r: " .. L["invalid entry for"] .. " [|cFF4455FF" .. name ..  "|r].")
+local function MsgError(obj)
+	DEFAULT_CHAT_FRAME:AddMessage("|cFF33FF99"..lname.."|r: " .. L["invalid entry for"] .. " [|cFF4455FF" .. obj ..  "|r].")
 end
 
 local function SanatizeUsage(opt1, desc, type)
@@ -67,17 +69,18 @@ function PerfectTargets:ToggleStandby()
 		self:Standby()
 	end
 
-	DEFAULT_CHAT_FRAME:AddMessage("|cFF33FF99"..L["_name"].."|r: " .. (self.onstandby and L["standing by."] or L["awake and ready."]))
+	DEFAULT_CHAT_FRAME:AddMessage("|cFF33FF99"..lname.."|r: " .. (self.onstandby and L["standing by."] or L["awake and ready."]))
 end
 
 function PerfectTargets:ResetDB()
 	self.db:ResetDB()
-	DEFAULT_CHAT_FRAME:AddMessage("|cFF33FF99"..L["_name"].."|r: " .. L["Your saved options are now reset."])
+	DEFAULT_CHAT_FRAME:AddMessage("|cFF33FF99"..lname.."|r: " .. L["Your saved options are now reset."])
 end
 
 function PerfectTargets:InitializeOptions()
-	local name, _, notes = GetAddOnInfo("PerfectTargets")
-	if not notes then return end
+	local name, title, notes = GetAddOnInfo("PerfectTargets")
+	if not name or title or notes then return end
+	lname = title
 
 	self.cmds = self:InitializeSlashCommand(notes, string.upper(name), string.upper(L["_name"]), string.lower(L["_name"]), L["slash2"])
 
