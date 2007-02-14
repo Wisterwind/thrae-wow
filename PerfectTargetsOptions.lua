@@ -18,10 +18,10 @@ local function MsgError(name)
 	DEFAULT_CHAT_FRAME:AddMessage("|cFF33FF99"..L["_name"].."|r: " .. L["invalid entry for"] .. " [|cFF4455FF" .. name ..  "|r].")
 end
 
-local function SanatizeUsage(opt1, desc, inputtype)
+local function SanatizeUsage(opt1, desc, type)
 	if not opt1 or not desc then return end
-	if inputtype then
-		return "|cFF9999FF" .. opt1 .. "|r <" .. type(inputtype) .. "> - " .. desc
+	if type then
+		return "|cFF9999FF" .. opt1 .. "|r <" .. type .. "> - " .. desc
 	end
 
 	return "|cFF9999FF" .. opt1 .. "|r - " .. desc
@@ -84,7 +84,7 @@ function PerfectTargets:InitializeOptions()
 	self.cmds:RegisterSlashHandler( SanatizeUsage(L["reset"], L["reset_desc"]), L["reset"], "ResetDB")
 	self.cmds:RegisterSlashHandler( SanatizeUsage(L["standby"], L["standby_desc"]), L["standby"], "ToggleStandby")
 	self.cmds:RegisterSlashHandler( SanatizeUsage(L["locked"], L["locked_desc"]), L["locked"], "ToggleFrameLock")
-	self.cmds:RegisterSlashHandler( SanatizeUsage(L["baserate"], L["baserate_desc"], 1), L["baserate"] .. "%s?(%d*)$", "SetBaseRate")
-	self.cmds:RegisterSlashHandler( SanatizeUsage(L["maxframes"], L["maxframes_desc"], 1), L["maxframes"] .. "%s?(%d*)$", "SetMaxFrames")
+	self.cmds:RegisterSlashHandler( SanatizeUsage(L["baserate"], L["baserate_desc"], L["number"]), L["baserate"] .. "%s?(%d*)$", "SetBaseRate")
+	self.cmds:RegisterSlashHandler( SanatizeUsage(L["maxframes"], L["maxframes_desc"], L["number"]), L["maxframes"] .. "%s?(%d*)$", "SetMaxFrames")
 end
 
