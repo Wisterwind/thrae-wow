@@ -1,4 +1,4 @@
-## Interface: 20005
+## Interface: 20003
 
 ## Title: Perfect Targets
 ## Notes: Minimalistic set of target frames.
@@ -18,4 +18,6 @@ libs\Dongle\Dongle.lua
 libs\Dongle\DongleUtils.lua
 
 PerfectTargetsLocale.lua
+PerfectTargetsLocale_zhTW.lua
 PerfectTargets.lua
+PerfectTargetsOptions.lua

@@ -1,7 +1,7 @@
 -- Core File
 
 local _G = getfenv(0)
-local PerfectTargetsLocale = _G.PerfectTargetsLocale
+local L = _G.PerfectTargetsLocale
 
 local metro = DongleStub("MetrognomeNano-Beta0")
 
@@ -27,7 +27,7 @@ local function ValidTargetHostile(unitId)
 	return true
 end
 
-local function ValidTargetHealer(unitId)
+local function ValidTargetHelp(unitId)
 	if not unitId or not UnitExists(unitId) or not UnitIsVisible(unitId) 
 	or not UnitExists(unitId.."target") or not UnitPlayerControlled(unitId.."target")
 	or UnitIsDead(unitId.."target") or UnitIsCorpse(unitId.."target")
@@ -42,7 +42,7 @@ local ValidTarget = ValidTargetHostile
 local function UnitStatus(unit)
 	local status
 	for i=1,maxdebuffs do
-		status = PerfectTargetsLocale[UnitDebuff(unit, i)]
+		status = L._hashed[UnitDebuff(unit, i)]
 		if status then
 			return (status == 2 and status) or 1
 		end
@@ -481,8 +481,8 @@ end
 function PerfectTargets:CreateMainFrame()
 	self.mainframe = CreateFrame("Frame", "PerfectTargetsFrame", UIParent)
 
-	self.mainframe:EnableMouse(true)
-	self.mainframe:SetMovable(true)
+	self.mainframe:EnableMouse(not self.db.profile.locked)
+	self.mainframe:SetMovable(not self.db.profile.locked)
 	self.mainframe:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 0, -150)
 	self.mainframe:SetWidth(200)
 	self.mainframe:SetHeight(14)
@@ -502,7 +502,6 @@ function PerfectTargets:CreateMainFrame()
 	self.headerback.master = self.mainframe
 	self.headerback:RegisterForDrag("LeftButton")
 	self.headerback:SetScript("OnDragStart", function()
-		if PerfectTargets.db.profile.framelocked then return end
 		this.master:StartMoving()
 		this.master.isMoving = true
 	end)
@@ -625,29 +624,33 @@ function PerfectTargets:ReInitialize()
 	self.headerback:Show()
 
 	self:ResetFrames()
-	self.asleep = nil
 end
 
-function PerfectTargets:Sleep()
+function PerfectTargets:Standby()
 	self:UnregisterAllEvents()
 	metro:Stop("PerfectTargetsMain")
 	self.mainframe:Hide()
 	self.headerback:Hide()
 
-	self.asleep = true
 	numtargets = nil
 	targets, tanks, tankstrings = nil,nil,nil
 
+	self.onstandby = true
+end
+
+function PerfectTargets:Sleep()
+	self:Standby()
+
 	self:RegisterEvent("PARTY_MEMBERS_CHANGED", "Wakeup")
 	self:RegisterEvent("RAID_ROSTER_UPDATE", "Wakeup")
+
+	self.asleep = true
 end
 
 function PerfectTargets:Wakeup()
 	self:ReInitialize()
-end
-
-function PerfectTargets:Standby()
-	self:Sleep()
+	self.onstandby = nil
+	self.asleep = nil
 end
 
 function PerfectTargets:FirstLoad()
@@ -656,6 +659,8 @@ function PerfectTargets:FirstLoad()
 	self:CreateMainFrame()
 
 	self:ReInitialize()
+
+	self.loaded = true
 end
 
 --[[-------------------------------------------------------
@@ -663,15 +668,14 @@ end
 ----------------------------------------------------------]]
 
 function PerfectTargets:Initialize()
-	self.defaults = {
+	self.db = self:InitializeDB("PerfectTargetsDB", {
 		profile = {
-			numinitials = 1,
 			maxframes = 10,
 			baserate = 0.25,
 		},
-	}
+	})
 
-	self.db = self:InitializeDB("PerfectTargetsDB", self.defaults)
+	self:InitializeOptions()
 	
 	self:RegisterEvent("PARTY_MEMBERS_CHANGED", "FirstLoad")
 	self:RegisterEvent("RAID_ROSTER_UPDATE", "FirstLoad")
