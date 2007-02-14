@@ -50,6 +50,7 @@ PerfectTargetsLocale = {
 	["is now"] = "is now",
 	["is currently"] = "is currently",
 	["invalid entry for"] = "invalid entry for",
+	["number"] = "number",
 }
 
 -- Instead of translating the values, these are translated hashes.
