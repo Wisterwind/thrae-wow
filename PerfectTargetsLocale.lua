@@ -19,8 +19,6 @@
 -- the actual translation of the hash key (IE, ["hash key"]) as the
 -- value assigned. The hash key must remain the same.
 PerfectTargetsLocale = {
-	["_name"] = "PerfectTargets",
-
 	----------------------------
 	-- Slash Commands
 	
@@ -28,29 +26,14 @@ PerfectTargetsLocale = {
 	["slash2"] = "ptarg",
 
 	-- options
-	["reset"] = "reset",
-	["reset_desc"] = "Reset all options",
-	["standby"] = "standby",
-	["standby_desc"] = "Toggle standby mode",
 	["locked"] = "lock",
 	["locked_desc"] = "Toggle locking the frame",
 	["baserate"] = "baserate",
 	["baserate_desc"] = "Visual update rate when targets do not change",
 	["maxframes"] = "maxframes",
 	["maxframes_desc"] = "Maximum number of target frames shown",
-
-	-- report
-	["On"] = "On",
-	["Off"] = "Off",
-	["standing by."] = "standing by.",
-	["awake and ready."] = "awake and ready.",
-	["Your saved options are now reset."] = "Your saved options are now reset.",
-
-	-- helpers
-	["is now"] = "is now",
-	["is currently"] = "is currently",
-	["invalid entry for"] = "invalid entry for",
-	["number"] = "number",
+	["emergencyname"] = "emergencyname",
+	["emergencyname_desc"] = "Toggle showing the dying friend's name instead of !",
 }
 
 -- Instead of translating the values, these are translated hashes.

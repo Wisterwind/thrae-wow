@@ -9,9 +9,9 @@ local maxbuffs, maxdebuffs = 32, 40
 local framecount, numtargets = 0
 local targets, tanks, tankstrings 
 
-local _
+local _, AddonName = GetAddOnInfo("PerfectTargets")
 
-PerfectTargets = DongleStub("Dongle-Beta0"):New("PerfectTargets")
+PerfectTargets = DongleStub("Dongle-Beta0"):New(AddonName)
 
 --[[-------------------------------------------------------
 -- Local Functions
@@ -49,12 +49,16 @@ local function UnitStatus(unit)
 	end
 end
 
+local function TargetAddition(unit)
+	return (not UnitIsUnit(unit, "player") and unit ~= "pet" and 1) or 0
+end
+
 local FixTargets, CheckForDups
 CheckForDups = function(goodt,tuid)
-	for j,t in pairs(targets) do
+	for i,t in pairs(targets) do
 		if t ~= goodt then
 			if not ValidTarget(t.unit) or UnitIsUnit(tuid,t.unit.."target") then
-				return FixTargets(j)
+				return FixTargets(i)
 			end
 		end
 	end
@@ -63,10 +67,9 @@ end
 
 FixTargets = function(i,tuid)
 	local substitute
+
 	targets[i][ targets[i].unit ] = nil
-	if not UnitIsUnit(targets[i].unit, "player") then
-		targets[i].num = targets[i].num - 1
-	end
+	targets[i].num = targets[i].num - TargetAddition(targets[i].unit)
 	targets[i].unit = nil
 	if tuid then 
 		targets[i].unit = tuid
@@ -81,9 +84,7 @@ FixTargets = function(i,tuid)
 					break
 				else
 					targets[i][u] = nil
-					if not UnitIsUnit(u, "player") then
-						targets[i].num = targets[i].num - 1
-					end
+					targets[i].num = targets[i].num - TargetAddition(u)
 				end
 			end
 		end
@@ -259,6 +260,16 @@ function ptframe:CreateTargetFrame(i, mainframe, anchor)
 	t.Bar:SetHeight(self.barheight)
 	t.Bar:Show()
 
+	t.TextIconLeft = t:CreateFontString(nil, "ARTWORK")
+	t.TextIconLeft:SetFontObject(GameFontHighlightSmall)
+	t.TextIconLeft:SetPoint("RIGHT", t, "LEFT", 2)
+	t.TextIconLeft:Show()
+
+	t.TextIconRight = t:CreateFontString(nil, "ARTWORK")
+	t.TextIconRight:SetFontObject(GameFontHighlightSmall)
+	t.TextIconRight:SetPoint("LEFT", t, "RIGHT", 2)
+	t.TextIconRight:Show()
+
 	t:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT")
 	t:SetPoint("TOPRIGHT", anchor, "BOTTOMRIGHT")
 	t:SetPoint("BOTTOM", t.MobName, "BOTTOM")
@@ -272,18 +283,7 @@ function ptframe:CreateTargetFrame(i, mainframe, anchor)
 	return t
 end
 
-
-function ptframe:OnEnter()
-	this.hover = true
-end
-
-
-function ptframe:OnLeave()
-	this.hover = nil
-end
-
-
-function ptframe:UpdateTargetFrame(frame, unit, tank, targCount, hpp, duptank, tankstring, resetwidth)
+function ptframe:UpdateTargetFrame(frame, unit, tank, targCount, hpp, duptank, tankstring, wrongtarget, dyingfriend, resetwidth)
 	if not frame then return end
 	frame.unit = unit
 	frame.tank = tank
@@ -291,19 +291,39 @@ function ptframe:UpdateTargetFrame(frame, unit, tank, targCount, hpp, duptank, t
 	local oldname = frame.MobNameText
 	self:UpdateFrameText(frame, "MyTarget", unit and UnitIsUnit("target", unit) and ">" or "")
 	self:UpdateFrameText(frame, "PetTarget", unit and UnitIsUnit("pettarget", unit) and not duptank and "<" or "")
-	self:UpdateFrameText(frame, "Targetted", not duptank and targCount and targCount > 0 or "-")
-	self:UpdateFrameText(frame, "MobName", mobname, isfocus)
+	self:UpdateFrameText(frame, "Targetted", not duptank and targCount ~= nil and targCount > 0 and targCount or "-")
+	self:UpdateFrameText(frame, "MobName", mobname)
 	self:UpdateFrameText(frame, "HPP", hpp and string.format("%d%%", hpp) or "")
 	self:UpdateFrameText(frame, "Tanks", tankstring or "")
 	self:UpdateFrameIcon(frame, unit and GetRaidTargetIndex(unit) or 0)
 
+	if dyingfriend then
+		if type(dyingfriend) == "string" then
+			self:UpdateFrameText(frame, "TextIconLeft", "! " .. dyingfriend .. " !")
+			self:UpdateFrameText(frame, "TextIconRight", "! " .. dyingfriend .. " !")
+		elseif wrongtarget then
+			self:UpdateFrameText(frame, "TextIconLeft", "!->!")
+			self:UpdateFrameText(frame, "TextIconRight", "!<-!")
+		else
+			self:UpdateFrameText(frame, "TextIconLeft", "|!|")
+			self:UpdateFrameText(frame, "TextIconRight", "|!|")
+		end
+	elseif wrongtarget then
+		self:UpdateFrameText(frame, "TextIconLeft", "|->|")
+		self:UpdateFrameText(frame, "TextIconRight", "|<-|")
+	else
+		self:UpdateFrameText(frame, "TextIconLeft", "")
+		self:UpdateFrameText(frame, "TextIconRight", "")
+	end
+
 	self:UpdateMobNameWidth(frame.MobName:GetStringWidth()*UIParent:GetScale(), resetwidth)
 	self:UpdateTankNameWidth(frame.Tanks:GetStringWidth()*UIParent:GetScale(), resetwidth)
 
-	if frame.hpp ~= (hpp or 0) then
-		frame.hpp = hpp or 0
-		frame.Bar:SetStatusBarColor(self:GetHPSeverity(nil, (hpp or 0)/100, 1))
-		frame.Bar:SetValue(hpp or 0)
+	hpp = hpp or 0
+	if frame.hpp ~= hpp then
+		frame.hpp = hpp
+		frame.Bar:SetStatusBarColor(self:GetHPSeverity(nil, hpp/100, 1))
+		frame.Bar:SetValue(hpp)
 	end
 
 	if frame.shown ~= (unit ~= nil) then
@@ -330,7 +350,7 @@ function ptframe:UpdateFrameIcon(frame, newidx)
 end
 
 
-function ptframe:UpdateTargetFrameColors(frame, tot, playercombat, isfriend, unitcombat, status)
+function ptframe:UpdateTargetFrameColors(frame, tot, playercombat, isfriend, unitcombat, status, dyingfriend)
 	self:UpdateFrameTextColor(frame, "MyTarget", playercombat and self.colors.red or self.colors.white)
 	self:UpdateFrameTextColor(frame, "MobName",
 		(frame.hover and frame.tank or frame.unit and frame.tank and frame.unit == frame.tank) and self.colors.tank
@@ -340,6 +360,15 @@ function ptframe:UpdateTargetFrameColors(frame, tot, playercombat, isfriend, uni
 		or status == 2 and unitcombat and self.colors.red
 		or status == 2 and self.colors.dkred
 		or unitcombat and self.colors.white or self.colors.grey)
+	
+	local c = dyingfriend and frame.unit and select(2, UnitClass(frame.unit.."target"))
+	if c then
+		frame.TextIconLeft:SetTextColor(RAID_CLASS_COLORS[c].r, RAID_CLASS_COLORS[c].g, RAID_CLASS_COLORS[c].b)
+		frame.TextIconRight:SetTextColor(RAID_CLASS_COLORS[c].r, RAID_CLASS_COLORS[c].g, RAID_CLASS_COLORS[c].b)
+	else
+		self:UpdateFrameTextColor(frame,"TextIconLeft", dyingfriend and self.colors.red or self.colors.white)
+		self:UpdateFrameTextColor(frame,"TextIconRight", dyingfriend and self.colors.red or self.colors.white)
+	end
 end
 
 
@@ -415,16 +444,22 @@ function PerfectTargets:UpdateUnitFrame(funit, frame, i, resetwidth)
 		if funit then
 			local isfriend = UnitIsFriend(unit, "player")
 			local hp, hpmax = UnitHealth(unit), UnitHealthMax(unit)
+			local dyingfriend = ValidTargetHelp(unit) and UnitHealth(unit.."target") / UnitHealthMax(unit.."target") < 0.2
 
 			ptframe:UpdateTargetFrame(
 					frame, 
 					unit, 
 					tanks[funit] and funit, 
-					targets[i].num or 0, 
-					(hpmax ~= 0) and math.floor((hp / hpmax) * 100) or 0, 
+					targets[i].num, 
+					(hpmax ~= 0) and math.floor((hp / hpmax) * 100), 
 					duptank, 
 					tankstrings[i],
-					resetwidth)
+					unit and UnitIsUnit(funit, "focus") and 
+						ValidTarget("player") and not UnitIsUnit(unit, "playertarget"),
+					self.db.profile.emergencyname and dyingfriend and 
+						UnitName(unit.."target") or dyingfriend,
+					resetwidth
+					)
 
 			ptframe:UpdateTargetFrameColors(
 					frame, 
@@ -432,22 +467,15 @@ function PerfectTargets:UpdateUnitFrame(funit, frame, i, resetwidth)
 					UnitAffectingCombat("player"), 
 					isfriend, 
 					not isfriend and UnitAffectingCombat(unit),
-					not isfriend and UnitStatus(unit))
-			if UnitExists("focus") and UnitIsUnit(funit, "focus") and 
-			   ValidTarget("player") and not UnitIsUnit(unit, "playertarget") 
-			   then
-			   	self.FocusLeft:Show()
-				self.FocusRight:Show()
-			end
-
+					not isfriend and UnitStatus(unit),
+					dyingfriend
+					)
 		end
 		frame:Show()
 	end
 end
 
 function PerfectTargets:UpdateFrames()
-	self.FocusLeft:Hide()
-	self.FocusRight:Hide()
 	for i=1,framecount do
 		self:UpdateUnitFrame(targets[i] and targets[i].unit, self.frames[i], i, i==1)
 	end
@@ -482,7 +510,7 @@ function PerfectTargets:CreateMainFrame()
 	self.mainframe = CreateFrame("Frame", "PerfectTargetsFrame", UIParent)
 
 	self.mainframe:EnableMouse(not self.db.profile.locked)
-	self.mainframe:SetMovable(not self.db.profile.locked)
+	self.mainframe:SetMovable(true)
 	self.mainframe:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 0, -150)
 	self.mainframe:SetWidth(200)
 	self.mainframe:SetHeight(14)
@@ -495,20 +523,23 @@ function PerfectTargets:CreateMainFrame()
 	self.headertext:SetFontObject(GameFontHighlightSmall)
 	self.headertext:ClearAllPoints()
 	self.headertext:SetPoint("BOTTOM", self.anchorframe, "BOTTOM")
-	self.headertext:SetText("Perfect Targets")
+	self.headertext:SetText(AddonName)
 	self.headertext:Show()
 
 	self.headerback = CreateFrame("Button", nil, UIParent)
 	self.headerback.master = self.mainframe
 	self.headerback:RegisterForDrag("LeftButton")
-	self.headerback:SetScript("OnDragStart", function()
-		this.master:StartMoving()
-		this.master.isMoving = true
+	
+	self.headerback:SetScript("OnDragStart", function(self)
+		if not PerfectTargets.db.profile.locked then
+			self.master:StartMoving()
+			self.master.isMoving = true
+		end
 	end)
 
-	self.headerback:SetScript("OnDragStop", function()
-		this.master:StopMovingOrSizing()
-		this.master.isMoving = nil
+	self.headerback:SetScript("OnDragStop", function(self)
+		self.master:StopMovingOrSizing()
+		self.master.isMoving = nil
 		PerfectTargets:SavePosition()
 	end)
 
@@ -520,18 +551,6 @@ function PerfectTargets:CreateMainFrame()
 		insets = {left = 0, right = -2, top = -2, bottom = -2},
 		})
 	self.headerback:Show()
-
-	self.FocusLeft = self.mainframe:CreateFontString(nil, "ARTWORK")
-	self.FocusLeft:SetFontObject(GameFontHighlightSmall)
-	self.FocusLeft:SetText("|!|")
-	self.FocusLeft:SetPoint("TOPRIGHT", self.anchorframe, "BOTTOMLEFT", -1, 0)
-	self.FocusLeft:Hide()
-
-	self.FocusRight = self.mainframe:CreateFontString(nil, "ARTWORK")
-	self.FocusRight:SetFontObject(GameFontHighlightSmall)
-	self.FocusRight:SetText("|!|")
-	self.FocusRight:SetPoint("TOPLEFT", self.anchorframe, "BOTTOMRIGHT", 1, 0)
-	self.FocusRight:Hide()
 end
 
 --[[-------------------------------------------------------
@@ -542,25 +561,40 @@ end
 -- Note that targets[i].unit may or may not be valid due to visability issues.
 -- UNIT_TARGET is not fired when a unit goes out of range then changes targets.
 function PerfectTargets:UNIT_TARGET(event,unit)
-	if (unit ~= "player" and UnitIsUnit(unit,"player")) or unit == "target" or unit == "focus" then return end
+	self:Print("UNIT_TARGET " .. unit)
+	if (unit ~= "player" and UnitIsUnit(unit,"player")) or unit == "target" or unit == "focus" or unit == "mouseover" then return end
 
 	local tuid = unit.."target"
 	if ValidTarget(unit) then
 		local knowntarget
 		for i,t in pairs(targets) do
 			if ValidTarget(t.unit) then
-				if UnitIsUnit(tuid, t.unit.."target") then
-					if CheckForDups(t, t.unit.."target") then
-						t[unit] = true
-						if not UnitIsUnit(unit, "player") then
-							t.num = t.num + 1
-						end
+				self:Print("Frame #" .. i)
+				if t[unit] then
+					if UnitIsUnit(tuid, t.unit.."target") then
+						self:Print("Frame #" .. i .. " - No action needed.")
+						CheckForDups(t, tuid)
 						knowntarget = true
 						if UnitIsUnit(unit, "focus") and i ~= 1 then
 							table.insert(targets, 1, table.remove(targets, i) )
 						end
 						break
+					elseif t.unit == unit then
+						FixTargets(i)
+					else
+						t[unit] = nil
+						t.num = t.num - TargetAddition(unit)
 					end
+				elseif UnitIsUnit(tuid, t.unit.."target") then
+					self:Print("Frame #" .. i .. " - Number targeting increased.")
+					CheckForDups(t, tuid)
+					t[unit] = true
+					t.num = t.num + TargetAddition(unit)
+					knowntarget = true
+					if UnitIsUnit(unit, "focus") and i ~= 1 then
+						table.insert(targets, 1, table.remove(targets, i) )
+					end
+					break
 				end
 			else -- primary targetId became invalid due to visability issues
 				FixTargets(i)
@@ -568,13 +602,14 @@ function PerfectTargets:UNIT_TARGET(event,unit)
 		end
 
 		if not knowntarget then
+			self:Print("Adding Unknown target of " .. unit)
 			numtargets = numtargets + 1
 			if UnitIsUnit(unit, "focus") then
 				table.insert(targets, 1, { [unit] = true, ["unit"] = unit, 
-							   ["num"] = ((not UnitIsUnit(unit, "player") and 1) or 0) } )
+							   ["num"] = TargetAddition(unit) } )
 			else
 				table.insert(targets, { [unit] = true, ["unit"] = unit,
-							["num"] = ((not UnitIsUnit(unit, "player") and 1) or 0) } )
+							["num"] = TargetAddition(unit) } )
 			end
 		end
 	else -- unit now has a non-valid target
@@ -583,9 +618,7 @@ function PerfectTargets:UNIT_TARGET(event,unit)
 				FixTargets(i)
 			elseif t[unit] then
 				t[unit] = nil
-				if not UnitIsUnit(unit, "player") then
-					t.num = t.num - 1
-				end
+				t.num = t.num - TargetAddition(unit)
 			end
 		end
 	end
@@ -681,7 +714,11 @@ function PerfectTargets:Initialize()
 	self:RegisterEvent("RAID_ROSTER_UPDATE", "FirstLoad")
 end
 
---[[
 function PerfectTargets:Enable()
+	if not self.loaded then
+		if GetNumPartyMembers() > 0 or GetNumRaidMembers() > 0 then
+			self:FirstLoad()
+		end
+	end
 end
---]]
+
