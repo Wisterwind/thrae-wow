@@ -561,7 +561,6 @@ end
 -- Note that targets[i].unit may or may not be valid due to visability issues.
 -- UNIT_TARGET is not fired when a unit goes out of range then changes targets.
 function PerfectTargets:UNIT_TARGET(event,unit)
-	self:Print("UNIT_TARGET " .. unit)
 	if (unit ~= "player" and UnitIsUnit(unit,"player")) or unit == "target" or unit == "focus" or unit == "mouseover" then return end
 
 	local tuid = unit.."target"
@@ -569,10 +568,8 @@ function PerfectTargets:UNIT_TARGET(event,unit)
 		local knowntarget
 		for i,t in pairs(targets) do
 			if ValidTarget(t.unit) then
-				self:Print("Frame #" .. i)
 				if t[unit] then
 					if UnitIsUnit(tuid, t.unit.."target") then
-						self:Print("Frame #" .. i .. " - No action needed.")
 						CheckForDups(t, tuid)
 						knowntarget = true
 						if UnitIsUnit(unit, "focus") and i ~= 1 then
@@ -586,7 +583,6 @@ function PerfectTargets:UNIT_TARGET(event,unit)
 						t.num = t.num - TargetAddition(unit)
 					end
 				elseif UnitIsUnit(tuid, t.unit.."target") then
-					self:Print("Frame #" .. i .. " - Number targeting increased.")
 					CheckForDups(t, tuid)
 					t[unit] = true
 					t.num = t.num + TargetAddition(unit)
@@ -602,7 +598,6 @@ function PerfectTargets:UNIT_TARGET(event,unit)
 		end
 
 		if not knowntarget then
-			self:Print("Adding Unknown target of " .. unit)
 			numtargets = numtargets + 1
 			if UnitIsUnit(unit, "focus") then
 				table.insert(targets, 1, { [unit] = true, ["unit"] = unit, 
