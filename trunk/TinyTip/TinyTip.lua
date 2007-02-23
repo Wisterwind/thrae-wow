@@ -11,44 +11,30 @@
 --]]
 
 local _G = getfenv(0)
-local strformat, strfind = string.format, string.find
-local tmp,tmp2,tmp3,i
 
+-- Local references
+local strformat, strfind = string.format, string.find
 local UIParent,GameTooltip = _G.UIParent,_G.GameTooltip
 local tooltip = GameTooltip
-local fGetAlpha, fSetAlpha, fHide, fShow, fSetBDColor, fGetBDColor, fSetBDBColor, fGetBDBColor, fSetPt, fClearPts, fSetScript, fGetName = UIParent.GetAlpha, UIParent.SetAlpha, UIParent.Show, UIParent.Hide, UIParent.SetBackdropColor, UIParent.GetBackdropColor, UIParent.SetBackdropBorderColor, UIParent.GetBackdropBorderColor, UIParent.SetPoint, UIParent.ClearAllPoints, UIParent.GetScript, UIParent.GetName
-
-local gtIsVisible, gtNumLines, gtAddLine, gtAddDoubleLine, gtLine1, gtLine2, gtLine3, gtSetOwner = GameTooltip.IsVisible, GameTooltip.NumLines, GameTooltip.AddLine, GameTooltip.AddDoubleLine, _G.GameTooltipTextLeft1, _G.GameTooltipTextLeft2, _G.GameTooltipTextLeft3, GameTooltip.SetOwner
-
-local sbShow = _G.GameTooltipStatusBar.Show
-
-local fsGetText, fsSetTextColor, fsGetTextColor, fsSetText, fsIsShown, fsGetWidth, fsHide, fsSetHeight, fsGetHeight = _G.GameTooltipTextLeft1.GetText, _G.GameTooltipTextLeft1.SetTextColor, _G.GameTooltipTextLeft1.GetTextColor, _G.GameTooltipTextLeft1.SetText,  _G.GameTooltipTextLeft1.IsShown, _G.GameTooltipTextLeft1.GetWidth, _G.GameTooltipTextLeft1.Hide, _G.GameTooltipTextLeft1.SetHeight, _G.GameTooltipTextLeft1.GetHeight
-
-local EventFrame
-
-local SpaceLevel = _G.TinyTipLocale_Level .. " "
-
-local acehook = {}
-_G.AceLibrary:GetInstance("AceHook-2.1"):embed(acehook)
-
-local db
-local DBVer = 33
 
 local RealmName
+local tmp,tmp2,tmp3,i
 
+	TinyTipLocale_RareElite		= string.format("%s %s", getglobal("ITEM_QUALITY3_DESC"), getglobal("ELITE") )
+
+
+local Level = 
+local SpaceLevel = _G.LEVEL .. " "
 local ClassColors = {}
 for k,v in pairs(_G.RAID_CLASS_COLORS) do
 	ClassColors[k] = strformat("%2x%2x%2x", v.r*255, v.g*255, v.b*255)
 end
 
+local _, AddonName = GetAddOnInfo("TinyTip")
+TinyTip = DongleStub("Dongle-Beta0"):New(AddonName)
+
 --------------------------------------------------------------------
 -- Global Functions
-
--- Print out a message, probably to ChatFrame1
-local DCFAddMessage = _G.DEFAULT_CHAT_FRAME.AddMessage
-function TinyTip_Msg(msg)
-	DCFAddMessage(_G.DEFAULT_CHAT_FRAME, "|cFFFFCC00TinyTip:|r " .. msg )
-end
 
 -- Return ALL possible saved options.
 function TinyTip_GetAllOptions()
@@ -112,23 +98,21 @@ function TinyTip_GetAllOptions()
 					}
 end
 
-function TinyTip_LoDRun(addon,sfunc,arg1,arg2,arg3,arg4,arg5,arg6)
-	if not _G[ sfunc ] then
-		local loaded, reason = _G.LoadAddOn(addon)
+function TinyTip:LoDRun(addon,sfunc,...)
+	if not self[ sfunc ] then
+		local loaded, reason = LoadAddOn(addon)
 		if loaded then
-			if _G[ sfunc ] and type( _G[ sfunc] ) == "function" then
-				_G[ sfunc ](arg1,arg2,arg3,arg4,arg5,arg6)
-			end
+			self[ sfunc ](...)
 		else
-			_G.TinyTip_Msg( addon .. " Addon LoadOnDemand Error - " .. reason )
+			TinyTip:Print( addon .. " Addon LoadOnDemand Error - " .. reason )
 			return reason
 		end
-	elseif type( _G[ sfunc] ) == "function" then
-			_G[ sfunc ](arg1,arg2,arg3,arg4,arg5,arg6)
+	else
+		self[ sfunc ](...)
 	end
 end
 
-function TinyTip_UpdateProfiles()
+function TinyTip:UpdateProfiles()
 	if _G.TinyTipDB["_profile"] then
 		if not _G.TinyTipCharDB then
 			local k,v
@@ -137,7 +121,7 @@ function TinyTip_UpdateProfiles()
 				_G.TinyTipCharDB[k] = v
 			end
 		end
-		db = _G.TinyTipCharDB
+		db = TinyTipCharDB
 	else
 		db = _G.TinyTipDB
 	end
