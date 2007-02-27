@@ -1,6 +1,7 @@
 ## Interface: 20003
 ## Author: Thrae
 ## Title: TinyTip
+## Title-koKR: 툴팁
 ## Notes: Adds reaction coloring, unit class / classification, race, and optionally pvp rank and guild to your tooltip. Default is stuck-to-mouse anchoring. Also ToT info and more. It's what Thrae wants in a tooltip.
 ## Notes-koKR: 우호도에 따른  색상기능이 있고, 직업/종족/계급/길드 등의 정보를 툴팁에 표시합니다.
 ## Notes-zhCN: 为信息条添加职业、种族、军衔、公会等多种信息，并默认设置为跟随鼠标。
@@ -10,12 +11,14 @@
 ## LoadWith: MobInfo2, MonkeyQuest
 libs\Dongle\Dongle.lua
 
-TinyTipLocale_zhCN.lua
-TinyTipLocale_frFR.lua
-TinyTipLocale_deDE.lua
-TinyTipLocale_koKR.lua
-TinyTipLocale_enEN.lua
-TinyTipLocale_zhTW.lua
-TinyTipLocale_esES.lua
+localization\TinyTipLocale.lua
+localization\TinyTipLocale_deDE.lua
+localization\TinyTipLocale_frFR.lua
+## localization\TinyTipLocale_esES.lua
+localization\TinyTipLocale_koKR.lua
+localization\TinyTipLocale_zhTW.lua
+localization\TinyTipLocale_zhCN.lua
+
 TinyTipAnchor.lua
+
 TinyTip.lua
