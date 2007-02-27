@@ -12,23 +12,32 @@
 
 local _G = getfenv(0)
 
--- Local references
+--[[---------------------------------------------
+-- Local References
+----------------------------------------------]]
 local strformat, strfind = string.format, string.find
 local UIParent,GameTooltip = _G.UIParent,_G.GameTooltip
-local tooltip = GameTooltip
 
-local RealmName
-local tmp,tmp2,tmp3,i
+local L = _G.TinyTipLocale
 
-	TinyTipLocale_RareElite		= string.format("%s %s", getglobal("ITEM_QUALITY3_DESC"), getglobal("ELITE") )
+--[[---------------------------------------------
+-- Local Variables
+----------------------------------------------]]
 
+local LSpaceLevel = L.Level .. " "
 
-local Level = 
-local SpaceLevel = _G.LEVEL .. " "
 local ClassColors = {}
 for k,v in pairs(_G.RAID_CLASS_COLORS) do
 	ClassColors[k] = strformat("%2x%2x%2x", v.r*255, v.g*255, v.b*255)
 end
+
+local tooltip
+local RealmName
+local tmp,tmp2,tmp3,i
+
+--[[-------------------------------------------------------------------
+-- Dongle it up
+--]]
 
 local _, AddonName = GetAddOnInfo("TinyTip")
 TinyTip = DongleStub("Dongle-Beta0"):New(AddonName)
@@ -104,7 +113,7 @@ function TinyTip:LoDRun(addon,sfunc,...)
 		if loaded then
 			self[ sfunc ](...)
 		else
-			TinyTip:Print( addon .. " Addon LoadOnDemand Error - " .. reason )
+			self:Print( addon .. " Addon LoadOnDemand Error - " .. reason )
 			return reason
 		end
 	else
@@ -133,59 +142,8 @@ function TinyTip:UpdateProfiles()
 	end
 end
 
--- Destroy the database and reset it with
--- default values.
-function TinyTip_DefaultDB()
-	local k
-	for k,_ in pairs(db) do
-		if k ~= "_v" then
-			db[k] = nil
-		end
-	end
-end
-
-function TinyTip_GetDB()
-	return db
-end
-
-function TinyTip_SetScale(opt,v)
-		if not v then
-			if _G.TinyTipExtras_Tooltip then
-				_G.TinyTipExtras_Tooltip:SetScale( 1.0 )
-			else
-				GameTooltip:SetScale( 1.0 )
-			end
-			db["Scale"] = nil
-		else
-			if _G.TinyTipExtras_Tooltip then
-				_G.TinyTipExtras_Tooltip:SetScale( v )
-			else
-				GameTooltip:SetScale( v )
-			end
-			db["Scale"] = v
-		end
-end
-
-function TinyTip_ResetReferences(_AddLine, _AddDoubleLine, _ettooltip, _tooltip)
-	gtAddLine, gtAddDoubleLine = _AddLine, _AddDoubleLine
-	EventFrame.tooltip, tooltip = _ettooltip, _tooltip
-end
-
--- Get rid of that darn fading effect
-function TinyTip_SlimOnUpdate()
-	tmp = fGetAlpha(GameTooltip)
-	if tmp and tmp < 1 then
-		if db["Fade"] ~= 1 or tmp < 0.1 or _G.TinyTipExtras_Tooltip then
-			fSetScript(EventFrame, "OnUpdate", nil)
-			gtSetOwner(GameTooltip, UIParent, "ANCHOR_CURSOR")
-		elseif db["ExtraTooltip"] and _G.TinyTipExtras_Tooltip then
-			fSetAlpha(_G.TinyTipExtras_Tooltip, tmp )
-		end
-	end
-end
-
 local TooltipCompacted
-function TinyTip_UnCompactGameTooltip()
+function TinyTip:UnCompactGameTooltip()
 	fClearPts(_G.GameTooltipStatusBar)
 	fSetPt(_G.GameTooltipStatusBar, "TOPLEFT", GameTooltip, "BOTTOMLEFT", 2, -1)
 	fSetPt(_G.GameTooltipStatusBar, "TOPRIGHT", GameTooltip, "BOTTOMRIGHT", -2, -1)
@@ -210,75 +168,9 @@ end
 	  and adds new ones.
 	* Otherwise just sets the local db.
 --]]
-local function InitDB()
-	local k,v
-	if not _G.TinyTipDB then
-		_G.TinyTip_Msg( _G.TinyTipLocale_InitDB1 )
-		_G.TinyTipDB = {}
-		db = _G.TinyTipDB
-		db["_v"] = DBVer
-		_G.TinyTip_Msg( _G.TinyTipLocale_InitDB2 )
-	elseif _G.TinyTipDB._profile and not _G.TinyTipCharDB then
-		_G.TinyTip_Msg( _G.TinyTipLocale_InitDB1 )
-		_G.TinyTipCharDB = {}
-		db = _G.TinyTipCharDB
-		db["_v"] = DBVer
-		_G.TinyTip_Msg( _G.TinyTipLocale_InitDB2 )
-	elseif _G.TinyTipDB._v ~= DBVer then
-		tmp = _G.TinyTip_GetAllOptions()
-		_G.TinyTip_Msg( _G.TinyTipLocale_InitDB3 )
-		db = _G.TinyTipDB
-		for k,_ in pairs(db) do -- prune
-			if not tmp[k] then
-				db[k] = nil
-			end
-		end
-		for k,v in pairs(tmp) do -- check types
-			if type(db[k]) ~= v then 
-				db[k] = nil
-			end
-		end
-		if db["MAnchor"] == "CURSOR" then db["MAnchor"] = nil end
-		db["_v"] = DBVer
-		if db["_profile"] then
-			if not _G.TinyTipCharDB then _G.TinyTipCharDB = {} end
-			db = _G.TinyTipCharDB
-			for k,_ in pairs(db) do -- prune
-				if not tmp[k] then
-					db[k] = nil
-				end
-			end
-			for k,v in pairs(tmp) do -- check types
-				if type(db[k]) ~= v then 
-					db[k] = nil
-				end
-			end
-			if db["MAnchor"] == "CURSOR" then db["MAnchor"] = nil end
-		end
-		tmp = nil
-		_G.TinyTip_Msg( _G.TinyTipLocale_InitDB4 )
-	elseif _G.TinyTipDB._profile then
-		_G.TinyTip_Msg( "Using profile data.")
-		_G.TinyTip_Msg( _G.TinyTipLocale_InitDB5 )
-		db = _G.TinyTipCharDB
-	else
-		-- _G.TinyTip_Msg( _G.TinyTipLocale_InitDB5 )
-		db = _G.TinyTipDB
-	end
-
-	-- nil out what we don't need any longer
-	_G.TinyTipLocale_InitDB1 = nil
-	_G.TinyTipLocale_InitDB2 = nil
-	_G.TinyTipLocale_InitDB3 = nil
-	_G.TinyTipLocale_InitDB4 = nil
-	_G.TinyTipLocale_InitDB5 = nil
-
-	-- then finally, nil out the function itself
-	InitDB = nil
-end
 
 -- for Tem
-function TinyTip_SmoothBorder(k)
+function TinyTip:SmoothBorder(k)
 	if k then db[k] = not db[k] end
 	if db["SmoothBorder"] then
 		GameTooltip:SetBackdrop({
@@ -829,6 +721,46 @@ local function OnEvent()
 	end
 end
 
+	elseif _G.event == "PLAYER_ENTERING_WORLD" and db then -- rescale
+		_G.TinyTip_SetScale("Scale", db["Scale"] )
+		if _G.TinyTipExtras_Init then _G.TinyTipExtras_Init(db) end
+	elseif _G.event == "ADDON_LOADED" and _G.arg1 == "TinyTip" then
+		InitDB()
+		RealmName = _G.GetRealmName()
+		if _G.TinyTipAnchor_SetLocals then 
+			_G.TinyTipAnchor_SetLocals(db,EventFrame,acehook)
+		end
+		local ttextraserror = true
+		if db["UseAceHook"] or db["PvPIcon"] or db["Buffs"] or db["Debuffs"] or db["ExtraTooltip"] or db["ManaBar"] or db["RTIcon"] then
+			ttextraserror = _G.TinyTip_LoDRun( "TinyTipExtras", "TinyTipExtras_Init", db, EventFrame,acehook)
+		elseif db["ToT"] or db["ToP"] or db["ToR"] then
+			_G.TinyTip_LoDRun( "TinyTipExtras", "TinyTipTargetsExists")
+		end
+		if not acehook:IsHooked(GameTooltip, "FadeOut") and ( db["Fade"] == 2 or db["ExtraTooltip"] ) then
+			acehook:SecureHook(GameTooltip, "FadeOut", _G.TinyTip_FadeOut)
+			_G.TinyTip_Original_GameTooltip_FadeOut = acehook.hooks[GameTooltip]["FadeOut"]
+		end
+		if not acehook:IsHooked(GameTooltip, "OnShow") then
+			acehook:HookScript(GameTooltip, "OnShow", _G.TinyTip_OnShow)
+			_G.TinyTip_Original_GameTooltip_OnShow = acehook.hooks[GameTooltip]["OnShow"]
+		end
+		if not acehook:IsHooked(GameTooltip, "OnTooltipCleared") then -- most sure-fire way to hide something
+			acehook:HookScript(GameTooltip, "OnTooltipCleared", _G.TinyTip_OnTooltipCleared)
+			_G.TinyTip_Original_GameTooltip_OnTooltipCleared = acehook.hooks[GameTooltip]["OnTooltipCleared"]
+		end
+
+		_G.TinyTip_SetScale( "Scale", db["Scale"] )
+
+		if db["Fade"] == 2 then
+			EventFrame:SetScript("OnUpdate", _G.TinyTip_SlimOnUpdate)
+		end
+
+		TinyTip_SmoothBorder()
+
+		EventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+		EventFrame:RegisterEvent("UPDATE_MOUSEOVER_UNIT")
+		GameTooltip:UnregisterEvent("UPDATE_MOUSEOVER_UNIT")	
+
 -----------------------------------------------------------------------
 -- WoW-Required Functions
 --
@@ -838,15 +770,6 @@ _G.SlashCmdList["TINYTIP"] = function(msg)
 		_G.TinyTip_LoDRun( "TinyTipOptions", "TinyTipChat_SlashHandler", msg, db)
 	end
 end
-	
------------------------------------------------------------------------
--- Ready the mod
---
-EventFrame = _G.CreateFrame("Frame", "TinyTipEventFrame", GameTooltip)
-EventFrame:SetScript("OnEvent", OnEvent)
-EventFrame:RegisterEvent("ADDON_LOADED")
-EventFrame:Show()
-EventFrame.tooltip = GameTooltip
 
 -- hook these immediatly
 if _G.TinyTipAnchor_Hook then TinyTipAnchor_Hook(acehook) end
@@ -854,4 +777,88 @@ if _G.TinyTipAnchor_Hook then TinyTipAnchor_Hook(acehook) end
 if not acehook:IsHooked(GameTooltip, "SetUnit") then
 	acehook:Hook(GameTooltip, "SetUnit", _G.TinyTip_SetUnit, true)
 	_G.TinyTip_Original_GameTooltip_SetUnit = acehook.hooks[GameTooltip]["SetUnit"]
+end
+
+--[[-------------------------------------------------------
+-- Standby Modes
+----------------------------------------------------------]]
+
+-- Called when coming out of Standby or first initialization.
+function TinyTip:ReInitialize()
+	db = self.db.profile
+	
+	self:UnregisterAllEvents()
+	RealmName = GetRealmName()
+
+	local ttextraserror = true
+	
+	if db["PvPIcon"] or db["Buffs"] or db["Debuffs"] or db["ExtraTooltip"] or db["ManaBar"] or db["RTIcon"] then
+		ttextraserror = _G.TinyTip_LoDRun( "TinyTipExtras" )
+	elseif db["ToT"] or db["ToP"] or db["ToR"] then
+		_G.TinyTip_LoDRun( "TinyTipExtras", "TinyTipTargetsExists")
+	end
+	
+	if not acehook:IsHooked(GameTooltip, "FadeOut") and ( db["Fade"] == 2 or db["ExtraTooltip"] ) then
+			acehook:SecureHook(GameTooltip, "FadeOut", _G.TinyTip_FadeOut)
+			_G.TinyTip_Original_GameTooltip_FadeOut = acehook.hooks[GameTooltip]["FadeOut"]
+		end
+		if not acehook:IsHooked(GameTooltip, "OnShow") then
+			acehook:HookScript(GameTooltip, "OnShow", _G.TinyTip_OnShow)
+			_G.TinyTip_Original_GameTooltip_OnShow = acehook.hooks[GameTooltip]["OnShow"]
+		end
+		if not acehook:IsHooked(GameTooltip, "OnTooltipCleared") then -- most sure-fire way to hide something
+			acehook:HookScript(GameTooltip, "OnTooltipCleared", _G.TinyTip_OnTooltipCleared)
+			_G.TinyTip_Original_GameTooltip_OnTooltipCleared = acehook.hooks[GameTooltip]["OnTooltipCleared"]
+		end
+
+		_G.TinyTip_SetScale( "Scale", db["Scale"] )
+
+		if db["Fade"] == 2 then
+			EventFrame:SetScript("OnUpdate", _G.TinyTip_SlimOnUpdate)
+		end
+
+		TinyTip_SmoothBorder()
+
+		EventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+		EventFrame:RegisterEvent("UPDATE_MOUSEOVER_UNIT")
+		GameTooltip:UnregisterEvent("UPDATE_MOUSEOVER_UNIT")	
+
+	
+end
+
+function TinyTip:Standby()
+	self:UnregisterAllEvents()
+	tooltip:Hide()
+
+	self.onstandby = true
+end
+
+function PerfectTargets:Wakeup()
+	self:ReInitialize()
+	self.onstandby = nil
+end
+
+--[[-------------------------------------------------------
+-- Dongle Initialization
+----------------------------------------------------------]]
+
+function TinyTip:Initialize()
+	self.db = self:InitializeDB("TinyTipDB", {
+		profile = {
+			maxframes = 10,
+			baserate = 0.25,
+		},
+	}, "global")
+
+--	self:InitializeOptions()
+end
+
+
+function TinyTip:Enable()
+	tooltip = CreateFrame("GameTooltip", "TinyTip_Tooltip", UIParent, "GameTooltipTemplate")
+	self.tooltip = tooltip
+	
+	self:ReInitialize()
+
+	self.loaded = true
 end
