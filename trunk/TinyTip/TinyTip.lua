@@ -37,7 +37,9 @@ local _, PlayerRealm
 -- Dongle it up
 --]]
 
-TinyTip = DongleStub("Dongle-1.0"):New(select(GetAddonInfo("TinyTip"), 2))
+_, TinyTip = GetAddOnInfo("TinyTip")
+TinyTip = DongleStub("Dongle-1.0"):New(TinyTip)
+local TinyTip = _G.TinyTip
 
 --[[
 function TinyTip:LoDRun(addon,sfunc,...)
@@ -103,7 +105,7 @@ function TinyTip:ColourPlayer(unit)
 end
 
 local function TooltipFormat(unit)
-    if not GameTooltip:IsVisible() or not UnitExists(unit) then return end
+    if not UnitExists(unit) then return end
 
     local numLines = GameTooltip:NumLines()
     local guildName = GetGuildInfo(unit)
@@ -121,34 +123,36 @@ local function TooltipFormat(unit)
     local isPlayer = UnitIsPlayer(unit)
     local name, realm = UnitName(unit)
     local rankName, rankNumber = GetPVPRankInfo(UnitPVPRank(unit), unit)
-    if isPlayer and rankNumber > 0 and db["PvPRank"] ~= 1 then
-        if rankName and db["PvPRank"] == 2 then -- RankName UnitName PlayerRealm
-            GameTooltipTextLeft1:SetText( "[ " ..  tmp2 .. " ] " .. (name or L.Unknown) .. ( (realm and
+    if isPlayer then
+        if rankNumber > 0 and db["PvPRank"] ~= 1 then
+            if rankName and db["PvPRank"] == 2 then -- RankName UnitName PlayerRealm
+                GameTooltipTextLeft1:SetText( "[ " ..  tmp2 .. " ] " .. (name or L.Unknown) .. ( (realm and
+                                                realm ~= PlayerRealm and ( (db["KeyServer"] and
+                                                "(*)") or (" (" .. realm .. ")") ) ) or "") )
+            elseif db["PvPRank"] == 3 then -- UnitName PlayerRealm RankNumber
+                GameTooltipTextLeft1:SetText( string.format("%s " .. L.strformat_ranknumber,
+                                                (name or L.Unknown) .. ( (realm and
+                                                realm ~= PlayerRealm and ( (db["KeyServer"] and
+                                                "(*)") or (" (" .. realm .. ")") ) ) or ""),
+                                                rankNumber))
+            else -- RankNumber UnitName PlayerRealm (default)
+                GameTooltipTextLeft1:SetText( string.format(L.strformat_ranknumber .. " %s",
+                                                rankNumber,
+                                                (name or L.Unknown) .. ( (realm and
+                                                realm ~= PlayerRealm and ( (db["KeyServer"] and
+                                                "(*)") or (" (" .. realm .. ")") ) ) or "")))
+            end
+        else -- UnitName PlayerRealm
+            GameTooltipTextLeft1:SetText( (name or L.Unknown) .. ( (realm and
                                             realm ~= PlayerRealm and ( (db["KeyServer"] and
                                             "(*)") or (" (" .. realm .. ")") ) ) or "") )
-        elseif db["PvPRank"] == 3 then -- UnitName PlayerRealm RankNumber
-            GameTooltipTextLeft1:SetText( string.format("%s " .. L.strformat_ranknumber,
-                                            (name or L.Unknown) .. ( (realm and
-                                            realm ~= PlayerRealm and ( (db["KeyServer"] and
-                                            "(*)") or (" (" .. realm .. ")") ) ) or ""),
-                                            rankNumber))
-        else -- RankNumber UnitName PlayerRealm (default)
-            GameTooltipTextLeft1:SetText( string.format(L.strformat_ranknumber .. " %s",
-                                            rankNumber,
-                                            (name or L.Unknown) .. ( (realm and
-                                            realm ~= PlayerRealm and ( (db["KeyServer"] and
-                                            "(*)") or (" (" .. realm .. ")") ) ) or "")))
         end
-    else -- UnitName PlayerRealm
-        GameTooltipTextLeft1:SetText( (name or L.Unknown) .. ( (realm and
-                                        realm ~= PlayerRealm and ( (db["KeyServer"] and
-                                        "(*)") or (" (" .. realm .. ")") ) ) or "") )
     end
-
 
     -- Reaction coloring
     local bdR,bdG,bdB = 0,0,0
-    local isPlayerOrPet, reactionNum = UnitPlayerControlled(unit), UnitReaction(unit, "player")
+    local isPlayerOrPet = UnitPlayerControlled(unit)
+    local reactionNum = UnitReaction(unit, "player")
     local deadOrTappedColour, reactionText
     if UnitIsTapped(unit) and not UnitIsTappedByPlayer(unit) then
         if not db["BGColor"] or db["BGColor"] == 2 then
@@ -200,12 +204,13 @@ local function TooltipFormat(unit)
     end
 
     -- remove PvP line, if it exists
-    if UnitIsPVP(unit) and not db["ReactionText"] and then
+    if UnitIsPVP(unit) and not db["ReactionText"] then
+        local text
         for i=afterLevelLine,numLines,1 do
             line = _G["GameTooltipTextLeft" .. i]
             if line then
-                line = line:GetText()
-                if line and strfind(line, PVP_ENABLED, 1, true) then
+                text = line:GetText()
+                if text and strfind(text, PVP_ENABLED, 1, true) then
                     line:SetText(nil)
                     line:ClearAllPoints()
                     line:SetPoint("TOPLEFT", _G["GameTooltipTextLeft" .. (i-1)] or levelLine, "BOTTOMLEFT", 0, 1)
@@ -233,20 +238,27 @@ local function TooltipFormat(unit)
         end
     end
 
-    -- Set the color of the faction or guild line, if it's available. This
+    -- Set the color of the trade or guild line, if it's available. This
     -- line comes before the level line.
-    if afterLevelLine > 3 then
+    if afterLevelLine and afterLevelLine > 3 then
         line = _G["GameTooltipTextLeft" .. (afterLevelLine - 2)]
 
-        -- We like to know who our guild members are.
-        if isPlayer and guildName and IsInGuild() and guildName == GetGuildInfo("player")
-        and db["Friends"] ~= 2 then
-            if not db["Friends"] and not UnitIsUnit(unit, "player")
-            and db["BGColor"] ~= 3 and db["BGColor"] ~= 1 then
-                bdR,bdG,bdB = 0.4, 0.1, 0.5
-                if line then line:SetTextColor( GameTooltipTextLeft1:GetTextColor() ) end
-            elseif line then line:SetTextColor( 0.58, 0.0, 0.83 ) end
-        elseif line then line:SetTextColor( GameTooltipTextLeft1:GetTextColor()  ) end
+        if line and line:IsShown() then
+            line:SetText( "<" .. line:GetText().. ">" )
+            -- We like to know who our guild members are.
+            if guildName and IsInGuild() and guildName == GetGuildInfo("player")
+            and db["Friends"] ~= 2 then
+                if not db["Friends"] and not UnitIsUnit(unit, "player")
+                and db["BGColor"] ~= 3 and db["BGColor"] ~= 1 then
+                    bdR,bdG,bdB = 0.4, 0.1, 0.5
+                    line:SetTextColor( GameTooltipTextLeft1:GetTextColor() )
+                else
+                    line:SetTextColor( 0.58, 0.0, 0.83 )
+                end
+            else -- other guilds or NPC trade line
+                line:SetTextColor( GameTooltipTextLeft1:GetTextColor() )
+            end
+        end
     end
 
     -- Check for a dead unit, but try to leave out Hunter's Feign Death
@@ -290,7 +302,7 @@ local function TooltipFormat(unit)
              local race = UnitRace(unit)
              levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "DDEEAA") ..
                              (( not db["HideRace"] and race and (race .. " ") ) or "") .. "|r|cFF" ..
-                             (deadOrTappedColour or self:ColourPlayer(unit)) .. (UnitClass(unit) or "" ) .. "|r"
+                             (deadOrTappedColour or TinyTip:ColourPlayer(unit)) .. (UnitClass(unit) or "" ) .. "|r"
         else -- pet or npc
              classification = UnitClassification(unit) -- Elite,etc. status
              if classication and classification ~= "normal" then
@@ -350,13 +362,15 @@ local function TooltipFormat(unit)
 end
 
 local Original_GameTooltip_OnTooltipSetUnit
-local function OnTooltipSetUnit(this,unit,...)
+local function OnTooltipSetUnit(self,...)
     if Original_Gametooltip_OnTooltipSetUnit then
-        Original_GameTooltip_SetUnit(this,unit,...)
+        Original_GameTooltip_SetUnit(self,...)
     end
     if not TinyTip.onstandby then
-        GameTooltip.unit = unit
+        local unit
+        _, unit = self:GetUnit()
         if not db["FormatDisabled"] then TooltipFormat(unit) end
+        TinyTip:SmoothBorder()
     end
 end
 
@@ -368,15 +382,13 @@ end
 function TinyTip:ReInitialize()
         self:UnregisterAllEvents()
 
-        PlayerRealm = GetPlayerRealm()
+        PlayerRealm = GetRealmName()
 
         if not Original_GameTooltip_OnTooltipSetUnit then
             Original_GameTooltip_OnTooltipSetUnit = GameTooltip:GetScript("OnTooltipSetUnit")
             if not Original_GameTooltip_OnTooltipSetUnit then Original_GameTooltip_OnTooltipSetUnit = false end
             GameTooltip:SetScript("OnTooltipSetUnit", OnTooltipSetUnit)
         end
-
-        self:SmoothBorder()
 end
 
 function TinyTip:Standby()
