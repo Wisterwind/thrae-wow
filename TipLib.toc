@@ -1,0 +1,14 @@
+## Interface: 20003
+## LoadOnDemand: 1
+## Author: Thrae
+## Title: TipLib
+## Notes: Library of common functions to tooltips. Can be used to create a psuedo tooltip.
+## Version: 1.0
+## LastUpdate: $Date: 2006-08-03 18:26:34 +0200 (Thu, 03 Aug 2006) $
+## X-ReleaseDate: "$Date: 2006-08-26 01:50:55 +0200 (Sat, 26 Aug 2006) $"
+## X-Website: http://www.wowace.com
+## X-Category: Library
+
+## OptionalDeps: Ace2
+
+TipLib-1.0\TipLib-1.0.lua
