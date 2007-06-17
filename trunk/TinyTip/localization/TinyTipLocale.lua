@@ -8,17 +8,17 @@
 --
 -- /script DEFAULT_CHAT_FRAME:AddMessage( GetLocale() )
 --
--- Do not repost without permission from the author. If you 
+-- Do not repost without permission from the author. If you
 -- want to add a translation, contact the author.
--- 
+--
 --]]
 
 TinyTipLocale = {
-	["slash2"] = "/ttip",
-	
-	["Tapped"] = "Tapped",
-	["Level"] = LEVEL,
-	["Unknown"] = UNKNOWN,
-	["Rare Elite"] = string.format("%s %s", ITEM_QUALITY3_DESC, ELITE ),
+    ["slash2"] = "/ttip",
+    ["Tapped"] = "Tapped",
+    ["Level"] = LEVEL,
+    ["Unknown"] = UNKNOWN,
+    ["Rare Elite"] = string.format("%s %s", ITEM_QUALITY3_DESC, ELITE ),
+    ["strformat_ranknumber"] = "[R %d]"
 }
 
