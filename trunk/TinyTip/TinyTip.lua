@@ -31,7 +31,7 @@ for k,v in pairs(RAID_CLASS_COLORS) do
     ClassColours[k] = strformat("%2x%2x%2x", v.r*255, v.g*255, v.b*255)
 end
 
-local _, PlayerRealm
+local _, db, PlayerRealm
 
 --[[-------------------------------------------------------------------
 -- Dongle it up
@@ -407,7 +407,7 @@ end
 ----------------------------------------------------------]]
 
 function TinyTip:Initialize()
-    if not TinyTipDB then db = {} end
+    if not _G.TinyTipDB then db = {} end
 end
 
 function TinyTip:Enable()
