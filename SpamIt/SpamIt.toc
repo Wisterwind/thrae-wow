@@ -1,6 +1,0 @@
-## Interface: 20003
-## Author: Thrae
-## Title: SpamIt!
-## Notes: Use /script SpamIt_Start() and /script SpamIt_Stop() in macros to start and stop "Out of energy", "Ability not ready", and "Out of rage" errors.
-SpamIt.lua
-
