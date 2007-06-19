@@ -420,14 +420,14 @@ if not TinyTip.dongled then
     local function OnEvent(self, event)
         if event == "ADDON_LOADED" then
             if not db then db = {} end
-            if not self.loaded then
-                self:ReInitialize()
-                self.loaded = true
+            if not TinyTip.loaded then
+                TinyTip:ReInitialize()
+                TinyTip.loaded = true
             end
         elseif event == "PLAYER_LOGIN" then
-            if not self.loaded then
-                self:ReInitialize()
-                self.loaded = true
+            if not TinyTip.loaded then
+                TinyTip:ReInitialize()
+                TinyTip.loaded = true
             end
         end
     end
