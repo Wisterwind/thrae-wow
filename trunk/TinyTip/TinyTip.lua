@@ -368,7 +368,7 @@ local function TooltipFormat(unit)
         if db["Border"] == 2 then
             GameTooltip:SetBackdropBorderColor(0,0,0,0) -- ghetto hide
         else
-            GameTooltip:SetBackdropBorderColor(bdR * 1.5 , bdB * 1.5, bdG * 1.5, 1)
+            GameTooltip:SetBackdropBorderColor(bdR * 1.5 , bdG * 1.5, bdB * 1.5, 1)
         end
     end
 
