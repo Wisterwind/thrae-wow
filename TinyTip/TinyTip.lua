@@ -160,9 +160,7 @@ local function TooltipFormat(unit)
     local reactionNum = UnitReaction(unit, "player")
     local deadOrTappedColour, reactionText
     if UnitIsTapped(unit) and not UnitIsTappedByPlayer(unit) then
-        if not db["BGColor"] or db["BGColor"] == 2 then
-            bdR,bdG,bdB = 0.54,0.54,0.54
-        end
+        bdR,bdG,bdB = 0.54,0.54,0.54
         GameTooltipTextLeft1:SetTextColor(0.54,0.54,0.54)
         deadOrTappedColour = "888888"
     elseif ( isPlayerOrPet and UnitCanAttack(unit, "player") ) or UnitIsTappedByPlayer(unit) or
@@ -174,12 +172,10 @@ local function TooltipFormat(unit)
         reactionText = ( reactionNum ~= nil and reactionNum > 0 and db["ReactionText"] and
                         _G["FACTION_STANDING_LABEL" .. reactionNum] ) or FACTION_STANDING_LABEL2
 
-        if (isPlayerOrPet and not db["BGColor"]) or db["BGColor"] == 2 then
-            if isPlayerOrPet and not UnitCanAttack("player", unit) then
-                bdR,bdG,bdB = 0.5,0.2,0.1
-            else
-                bdR,bdG,bdB = 0.5,0.0,0.0
-            end
+        if isPlayerOrPet and not UnitCanAttack("player", unit) then
+            bdR,bdG,bdB = 0.5,0.2,0.1
+        else
+            bdR,bdG,bdB = 0.5,0.0,0.0
         end
     elseif ( isPlayerOrPet and UnitCanAttack("player",unit) ) or
             ( not isPlayerOrPet and reactionNum and reactionNum <= 4 ) then
@@ -189,14 +185,10 @@ local function TooltipFormat(unit)
                                             FACTION_BAR_COLORS[4].b)
 
         if db["ReactionText"] then reactionText = FACTION_STANDING_LABEL4 end
-        if (isPlayerOrPet and not db["BGColor"]) or db["BGColor"] == 2 then
-            bdR,bdG,bdB = 0.5, 0.5, 0.0
-        end
+        bdR,bdG,bdB = 0.5, 0.5, 0.0
     else -- friendly
         reactionText = FACTION_STANDING_LABEL5
-        if (isPlayerOrPet and not db["BGColor"]) or db["BGColor"] == 2 then
-            bdR,bdG,bdB = 0.0, 0.0, 0.5
-        end
+        bdR,bdG,bdB = 0.0, 0.0, 0.5
         if UnitIsPVP(unit) then -- friendly, PvP-enabled
             GameTooltipTextLeft1:SetTextColor(  FACTION_BAR_COLORS[6].r,
                                                 FACTION_BAR_COLORS[6].g,
@@ -272,9 +264,7 @@ local function TooltipFormat(unit)
     local isDead
     if UnitHealth(unit) <= 0 and ( not isPlayer or UnitIsDeadOrGhost(unit)
                                     or UnitIsCorpse(unit) ) then
-        if not db["BGColor"] or db["BGColor"] == 2 then
-            bdR,bdG,bdB = 0.54, 0.54, 0.54
-        end
+        bdR,bdG,bdB = 0.54, 0.54, 0.54
         GameTooltipTextLeft1:SetTextColor(0.54,0.54,0.54)
         deadOrTappedColour = "888888"
         isDead = true
@@ -357,8 +347,8 @@ local function TooltipFormat(unit)
     end -- the Level Line
 
 
-    if db["BGColor"] ~= 1 then
-        if db["BGColor"] == 3 then
+    if db["BGColor"] ~= 1 or ( isPlayerOrPet and not ["BGColor"] ) then
+        if db["BGColor"] == 3 and not deadOrTappedColour then
             bdR,bdG,bdB = 0,0,0
         end
         GameTooltip:SetBackdropColor(bdR, bdG, bdB)
@@ -473,6 +463,9 @@ if not TinyTip.dongled then
                 db = {
                     --[[
                     ["FormatDisabled"] = true,   -- This will disable all formating, but not positioning.
+                    ["BGColor"] = 1,             -- 1 will disable colouring the background. 3 will make it black,
+                                                 -- except for Tapped/Dead.
+                    ["Border"] = 1,              -- 1 will disable colouring the border. 2 will make it always black.
                     ["FAnchor"] = nil,           -- "BOTTOMRIGHT", "BOTTOMLEFT", "TOPRIGHT", "TOPLEFT", "CURSOR"
                                                  -- Used only in Frames. TinyTip default is BOTTOMRIGHT.
                     ["MAnchor"] = "GAMEDEFAULT", -- Used only for Mouseover units. Options same as above, with the
@@ -480,7 +473,7 @@ if not TinyTip.dongled then
                     ["FOffX"] = nil,             -- X offset for Frame units (horizontal).
                     ["FOffY"] = nil,             -- Y offset for Frame units (vertical).
                     ["MOffX"] = nil,             -- Offset for Mouseover units (World Frame).
-                    ["MOffY"] = nil,             -- "     "       "       "       "
+                    ["MOffY"] = nil              -- "     "       "       "       "
                     --]]
                 }
             end
