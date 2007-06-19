@@ -197,6 +197,7 @@ local function TooltipFormat(unit)
             GameTooltipTextLeft1:SetTextColor(  (not isPlayerOrPet and FACTION_BAR_COLORS[reactionNum or 5].r) or 0,
                                                 (not isPlayerOrPet and FACTION_BAR_COLORS[reactionNum or 5].g) or 0.67,
                                                 (not isPlayerOrPet and FACTION_BAR_COLORS[reactionNum or 5].b) or 1.0)
+
         end
     end
 
@@ -357,8 +358,10 @@ local function TooltipFormat(unit)
     if db["Border"] ~= 1 then
         if db["Border"] == 2 and not deadOrTappedColour then
             GameTooltip:SetBackdropBorderColor(0,0,0,0) -- ghetto hide
-        else
+        elseif isPlayerOrPet or db["Border"] == 3 then
             GameTooltip:SetBackdropBorderColor(bdR * 1.5 , bdG * 1.5, bdB * 1.5, 1)
+        else
+            GameTooltip:SetBackdropBorderColor( GameTooltipTextLeft1:GetTextColor(), 1 )
         end
     end
 
@@ -466,6 +469,7 @@ if not TinyTip.dongled then
                     ["BGColor"] = 1,             -- 1 will disable colouring the background. 3 will make it black,
                                                  -- except for Tapped/Dead. 2 will colour NPCs as well as PCs.
                     ["Border"] = 1,              -- 1 will disable colouring the border. 2 will make it always black.
+                                                 -- 3 will make it a similiar colour to the background for NPCs.
                     ["FAnchor"] = nil,           -- "BOTTOMRIGHT", "BOTTOMLEFT", "TOPRIGHT", "TOPLEFT", "CURSOR"
                                                  -- Used only in Frames. TinyTip default is BOTTOMRIGHT.
                     ["MAnchor"] = "GAMEDEFAULT", -- Used only for Mouseover units. Options same as above, with the
