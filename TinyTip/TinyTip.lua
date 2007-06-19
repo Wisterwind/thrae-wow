@@ -188,7 +188,11 @@ local function TooltipFormat(unit)
         bdR,bdG,bdB = 0.5, 0.5, 0.0
     else -- friendly
         reactionText = FACTION_STANDING_LABEL5
-        bdR,bdG,bdB = 0.0, 0.0, 0.5
+        if isPlayerOrPet then
+            bdR,bdG,bdB = 0.0, 0.0, 0.5
+        else
+            bdR,bdG,bdB = 0.0, 0.5, 0.0
+        end
         if UnitIsPVP(unit) then -- friendly, PvP-enabled
             GameTooltipTextLeft1:SetTextColor(  FACTION_BAR_COLORS[6].r,
                                                 FACTION_BAR_COLORS[6].g,
@@ -361,7 +365,7 @@ local function TooltipFormat(unit)
         elseif isPlayerOrPet or db["Border"] == 3 then
             GameTooltip:SetBackdropBorderColor(bdR * 1.5 , bdG * 1.5, bdB * 1.5, 1)
         else
-            GameTooltip:SetBackdropBorderColor( GameTooltipTextLeft1:GetTextColor(), 1 )
+            GameTooltip:SetBackdropBorderColor( bdR, bdG, bdB, 1 )
         end
     end
 
