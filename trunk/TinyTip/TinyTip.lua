@@ -304,32 +304,39 @@ local function TooltipFormat(unit)
                              (( not db["HideRace"] and race and (race .. " ") ) or "") .. "|r|cFF" ..
                              (deadOrTappedColour or TinyTip:ColourPlayer(unit)) .. (UnitClass(unit) or "" ) .. "|r"
         else -- pet or npc
-             classification = UnitClassification(unit) -- Elite,etc. status
-             if classification and classification ~= "normal" then
-                 if classification == "elite" then
-                     classification = ((db["KeyElite"] and "") or " ") .. "|cFF" .. (deadOrTappedColour or "FFCC00") ..
-                                     ((db["KeyElite"] and "*") or ELITE) .. "|r"
-                 elseif classification == "worldboss" then
-                     classification = ((db["KeyElite"] and "") or " ") .. "|cFF" .. (deadOrTappedColour or "FF0000") ..
-                                     ((db["KeyElite"] and "**") or BOSS) .. "|r"
-                 elseif classification == "rare" then
-                     classification = ((db["KeyElite"] and "") or " ") .. "|cFF" .. (deadOrTappedColour or "FF66FF") ..
-                                     ((db["KeyElite"] and "!") or ITEM_QUALITY3_DESC) .. "|r"
-                 elseif classification == "rareelite" then
-                     classification = ((db["KeyElite"] and "") or " ") .. "|cFF" .. (deadOrTappedColour or "FFAAFF") ..
-                                     ((db["KeyElite"] and "!*") or L.RareElite) .. "|r"
-                 else -- should never get here
-                     classification = " [|cFF" .. (deadOrTappedColour or "FFFFFF") .. classification .. "|r]"
-                 end
+            if not isPlayerOrPet then
+                local npcType = UnitClassification(unit) -- Elite,etc. status
+                if npcType and npcType ~= "normal" then
+                    if npcType == "elite" then
+                        levelLineText = levelLineText .. ((db["KeyElite"] and "") or " ") .. "|cFF" ..
+                                                            (deadOrTappedColour or "FFCC00") ..
+                                                            ((db["KeyElite"] and "+") or ELITE) .. "|r"
+                    elseif npcType == "worldboss" then
+                        levelLineText = levelLineText .. ((db["KeyElite"] and "") or " ") .. "|cFF" ..
+                                                            (deadOrTappedColour or "FF0000") ..
+                                                            ((db["KeyElite"] and "+++") or BOSS) .. "|r"
+                    elseif npcType == "rare" then
+                        levelLineText = levelLineText .. ((db["KeyElite"] and "") or " ") .. "|cFF" ..
+                                                            (deadOrTappedColour or "FF66FF") ..
+                                                            ((db["KeyElite"] and "!") or ITEM_QUALITY3_DESC) .. "|r"
+                    elseif npcType == "rareelite" then
+                        levelLineText = levelLineText .. ((db["KeyElite"] and "") or " ") .. "|cFF" ..
+                                                            (deadOrTappedColour or "FFAAFF") ..
+                                                            ((db["KeyElite"] and "!+") or L.RareElite) .. "|r"
+                    else -- should never get here
+                        levelLineText = levelLineText .. " [|cFF" ..
+                                        (deadOrTappedColour or "FFFFFF") .. npcType .. "|r]"
+                    end
+                end
              end
              if not db["HideRace"] then
                  if isPlayerOrPet then
-                     levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "DDEEAA") ..
+                    levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "DDEEAA") ..
                                     (UnitCreatureFamily(unit) or "") .. "|r"
                  else
-                     levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "DDEEAA") ..
+                    levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "DDEEAA") ..
                                     (UnitCreatureType(unit) or "") .. "|r"
-                end
+                 end
              end
          end
 
