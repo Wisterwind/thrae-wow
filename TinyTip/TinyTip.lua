@@ -384,7 +384,6 @@ local function OnTooltipSetUnit(self,...)
         local unit
         _, unit = self:GetUnit()
         if not db["FormatDisabled"] then TooltipFormat(unit) end
-        TinyTip:SmoothBorder()
     end
 end
 
@@ -438,6 +437,7 @@ function TinyTip:ReInitialize()
        -- self:UnregisterAllEvents()
 
         PlayerRealm = GetRealmName()
+        self:SmoothBorder()
 
         if Original_GameTooltip_SetDefaultAnchor == nil then
             Original_GameTooltip_SetDefaultAnchor = _G.GameTooltip_SetDefaultAnchor
