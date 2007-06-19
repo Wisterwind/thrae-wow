@@ -1,13 +1,15 @@
 --[[
 -- Name: TinyTip
 -- Author: Thrae of Maelstrom (aka "Matthew Carras")
--- Release Date: 6-25-06
+-- Release Date:
+-- Release Version: 2.0
 --
--- Based very losely off AF_Tooltip_Mini
--- Some code from PerfectTooltip by cladhaire
+-- Thanks to #wowace, #dongle, and #wowi-lounge on Freenode as always for
+-- optimization assistance. Thanks to AF_Tooltip_Mini for the idea that
+-- became TinyTip.
 --
--- Thanks to #wowace and #wowi-lounge on Freenode as always for
--- optimization assistance.
+-- Note: See bottom of code for instructions on manually changing database
+-- values (within the OnEvent function).
 --]]
 
 local _G = getfenv(0)
@@ -16,7 +18,7 @@ local _G = getfenv(0)
 -- Local References
 ----------------------------------------------]]
 local strformat, strfind = string.format, string.find
-local GameTooltip = _G.GameTooltip
+local UIParent, GameTooltip = _G.UIParent, _G.GameTooltip
 
 local L = _G.TinyTipLocale
 
@@ -395,7 +397,7 @@ local function SetDefaultAnchor(tooltip,owner,...)
     if Original_GameTooltip_SetDefaultAnchor then
         Original_GameTooltip_SetDefaultAnchor(tooltip,owner,...)
     end
-    if tooltip == GameTooltip then
+    if tooltip == GameTooltip and not TinyTip.onstandby then
         if owner ~= UIParent then
             if db["FAnchor"] or db["FOffX"] or db["FOffY"] then
                 if db["FAnchor"] == "CURSOR" then
@@ -470,14 +472,15 @@ if not TinyTip.dongled then
             if not db then
                 db = {
                     --[[
-                    ["FAnchor"] = nil, -- "BOTTOMRIGHT", "BOTTOMLEFT", "TOPRIGHT", "TOPLEFT", "CURSOR"
-                                       -- Used only in Frames. TinyTip default is BOTTOMRIGHT.
-                    ["MAnchor"] = nil, -- Used only for Mouseover units. Options same as above, with the
-                                       -- addition of "GAMEDEFAULT". TinyTip Default is CURSOR.
-                    ["FOffX"] = nil,   -- X offset for Frame units (horizontal).
-                    ["FOffY"] = nil,   -- Y offset for Frame units (vertical).
-                    ["MOffX"] = nil,   -- Offset for Mouseover units (World Frame).
-                    ["MOffY"] = nil,   -- "     "       "       "       "
+                    ["FormatDisabled"] = true,   -- This will disable all formating, but not positioning.
+                    ["FAnchor"] = nil,           -- "BOTTOMRIGHT", "BOTTOMLEFT", "TOPRIGHT", "TOPLEFT", "CURSOR"
+                                                 -- Used only in Frames. TinyTip default is BOTTOMRIGHT.
+                    ["MAnchor"] = "GAMEDEFAULT", -- Used only for Mouseover units. Options same as above, with the
+                                                 -- addition of "GAMEDEFAULT". TinyTip Default is CURSOR.
+                    ["FOffX"] = nil,             -- X offset for Frame units (horizontal).
+                    ["FOffY"] = nil,             -- Y offset for Frame units (vertical).
+                    ["MOffX"] = nil,             -- Offset for Mouseover units (World Frame).
+                    ["MOffY"] = nil,             -- "     "       "       "       "
                     --]]
                 }
             end
