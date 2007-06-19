@@ -33,10 +33,6 @@ end
 
 local _, db, PlayerRealm
 
---[[-------------------------------------------------------------------
--- Dongle it up
---]]
-
 -- _, TinyTip = GetAddOnInfo("TinyTip")
 -- TinyTip = DongleStub("Dongle-1.0"):New(TinyTip)
 if not _G.TinyTip then
@@ -59,6 +55,10 @@ function TinyTip:LoDRun(addon,sfunc,...)
 	end
 end
 --]]
+
+--[[----------------------------------------------------------------------
+-- Formating and Skinning
+-------------------------------------------------------------------------]]
 
 -- for Tem
 function TinyTip:SmoothBorder()
@@ -373,7 +373,7 @@ local function TooltipFormat(unit)
     GameTooltip:Show() -- used to re-size gametooltip
 end
 
-local Original_GameTooltip_OnTooltipSetUnit
+local Original_GameTooltip_OnTooltipSetUnit = nil
 local function OnTooltipSetUnit(self,...)
     if Original_Gametooltip_OnTooltipSetUnit then
         Original_GameTooltip_SetUnit(self,...)
@@ -387,6 +387,47 @@ local function OnTooltipSetUnit(self,...)
 end
 
 --[[-------------------------------------------------------
+-- Anchoring and Positioning
+---------------------------------------------------------]]
+
+local Original_GameTooltip_SetDefaultAnchor = nil
+local function SetDefaultAnchor(tooltip,owner,...)
+    if Original_GameTooltip_SetDefaultAnchor then
+        Original_GameTooltip_SetDefaultAnchor(tooltip,owner,...)
+    end
+    if tooltip == GameTooltip then
+        if owner ~= UIParent then
+            if db["FAnchor"] or db["FOffX"] or db["FOffY"] then
+                if db["FAnchor"] == "CURSOR" then
+                        tooltip:SetOwner(owner, "ANCHOR_CURSOR")
+                else
+                    tooltip:SetOwner(owner, "ANCHOR_NONE")
+                    tooltip:ClearAllPoints()
+                    tooltip:SetPoint(db["FAnchor"] or "BOTTOMRIGHT",
+                                     UIParent,
+                                     db["FAnchor"] or "BOTTOMRIGHT",
+                                     (db["FOffX"] or 0) - ((not db["FAnchor"] and (CONTAINER_OFFSET_X - 13)) or 0),
+                                     (db["FOffY"] or 0) + ((not db["FAnchor"] and CONTAINER_OFFSET_Y) or 0))
+                end
+            end
+        elseif db["MAnchor"] ~= "GAMEDEFAULT" or db["MOffX"] or db["MOffY"] then
+            if not db["MAnchor"] then
+                tooltip:SetOwner(owner, "ANCHOR_CURSOR")
+            else
+                tooltip:SetOwner(owner, "ANCHOR_NONE")
+                tooltip:ClearAllPoints()
+                tooltip:SetPoint((db["MAnchor"] ~= "GAMEDEFAULT" and db["MAnchor"]) or "BOTTOMRIGHT",
+                                 UIParent,
+                                 (db["MAnchor"] ~= "GAMEDEFAULT" and db["MAnchor"]) or "BOTTOMRIGHT",
+                                 (db["MOffX"] or 0) - ((db["MAnchor"] == "GAMEDEFAULT"
+                                  and (CONTAINER_OFFSET_X - 13)) or 0),
+                                 (db["MOffY"] or 0) + ((db["MAnchor"] == "GAMEDEFAULT" and CONTAINER_OFFSET_Y) or 0))
+            end
+        end
+    end
+end
+
+--[[-------------------------------------------------------
 -- Standby Modes
 ----------------------------------------------------------]]
 
@@ -396,7 +437,12 @@ function TinyTip:ReInitialize()
 
         PlayerRealm = GetRealmName()
 
-        if not Original_GameTooltip_OnTooltipSetUnit then
+        if Original_GameTooltip_SetDefaultAnchor == nil then
+            Original_GameTooltip_SetDefaultAnchor = _G.GameTooltip_SetDefaultAnchor
+            if not Original_GameTooltip_SetDefaultAnchor then Original_GameTooltip_SetDefaultAnchor = false end
+            _G.GameTooltip_SetDefaultAnchor = SetDefaultAnchor
+        end
+        if Original_GameTooltip_OnTooltipSetUnit == nil then
             Original_GameTooltip_OnTooltipSetUnit = GameTooltip:GetScript("OnTooltipSetUnit")
             if not Original_GameTooltip_OnTooltipSetUnit then Original_GameTooltip_OnTooltipSetUnit = false end
             GameTooltip:SetScript("OnTooltipSetUnit", OnTooltipSetUnit)
@@ -421,7 +467,20 @@ end
 if not TinyTip.dongled then
     local function OnEvent(self, event)
         if event == "ADDON_LOADED" then
-            if not db then db = {} end
+            if not db then
+                db = {
+                    --[[
+                    ["FAnchor"] = nil, -- "BOTTOMRIGHT", "BOTTOMLEFT", "TOPRIGHT", "TOPLEFT", "CURSOR"
+                                       -- Used only in Frames. TinyTip default is BOTTOMRIGHT.
+                    ["MAnchor"] = nil, -- Used only for Mouseover units. Options same as above, with the
+                                       -- addition of "GAMEDEFAULT". TinyTip Default is CURSOR.
+                    ["FOffX"] = nil,   -- X offset for Frame units (horizontal).
+                    ["FOffY"] = nil,   -- Y offset for Frame units (vertical).
+                    ["MOffX"] = nil,   -- Offset for Mouseover units (World Frame).
+                    ["MOffY"] = nil,   -- "     "       "       "       "
+                    --]]
+                }
+            end
             if not TinyTip.loaded then
                 TinyTip:ReInitialize()
                 TinyTip.loaded = true
