@@ -305,7 +305,7 @@ local function TooltipFormat(unit)
                              (deadOrTappedColour or TinyTip:ColourPlayer(unit)) .. (UnitClass(unit) or "" ) .. "|r"
         else -- pet or npc
              classification = UnitClassification(unit) -- Elite,etc. status
-             if classication and classification ~= "normal" then
+             if classification and classification ~= "normal" then
                  if classification == "elite" then
                      classification = ((db["KeyElite"] and "") or " ") .. "|cFF" .. (deadOrTappedColour or "FFCC00") ..
                                      ((db["KeyElite"] and "*") or ELITE) .. "|r"
