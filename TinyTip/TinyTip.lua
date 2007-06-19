@@ -16,7 +16,7 @@ local _G = getfenv(0)
 -- Local References
 ----------------------------------------------]]
 local strformat, strfind = string.format, string.find
-local UIParent,GameTooltip = _G.UIParent,_G.GameTooltip
+local GameTooltip = _G.GameTooltip
 
 local L = _G.TinyTipLocale
 
@@ -37,8 +37,11 @@ local _, db, PlayerRealm
 -- Dongle it up
 --]]
 
-_, TinyTip = GetAddOnInfo("TinyTip")
-TinyTip = DongleStub("Dongle-1.0"):New(TinyTip)
+-- _, TinyTip = GetAddOnInfo("TinyTip")
+-- TinyTip = DongleStub("Dongle-1.0"):New(TinyTip)
+if not _G.TinyTip then
+    _G.TinyTip = { ["dongled"] = nil }
+end
 local TinyTip = _G.TinyTip
 
 --[[
@@ -387,7 +390,7 @@ end
 
 -- Called when coming out of Standby, first initialization, or options change.
 function TinyTip:ReInitialize()
-        self:UnregisterAllEvents()
+       -- self:UnregisterAllEvents()
 
         PlayerRealm = GetRealmName()
 
@@ -400,7 +403,7 @@ end
 
 function TinyTip:Standby()
     self.onstandby = true
-    self:UnregisterAllEvents()
+    --self:UnregisterAllEvents()
     self:SmoothBorder()
 end
 
@@ -410,9 +413,31 @@ function TinyTip:Wakeup()
 end
 
 --[[-------------------------------------------------------
--- Dongle Initialization
+-- Initialization
 ----------------------------------------------------------]]
 
+if not TinyTip.dongled then
+    local function OnEvent(self, event)
+        if event == "ADDON_LOADED" then
+            if not db then db = {} end
+            if not self.loaded then
+                self:ReInitialize()
+                self.loaded = true
+            end
+        elseif event == "PLAYER_LOGIN" then
+            if not self.loaded then
+                self:ReInitialize()
+                self.loaded = true
+            end
+        end
+    end
+    local EventFrame = CreateFrame("Frame", UIParent)
+    EventFrame:RegisterEvent("ADDON_LOADED")
+    EventFrame:RegisterEvent("PLAYER_LOGIN")
+    EventFrame:SetScript("OnEvent", OnEvent)
+end
+
+--[[
 function TinyTip:Initialize()
     if not _G.TinyTipDB then db = {} end
 end
@@ -421,4 +446,4 @@ function TinyTip:Enable()
     self:ReInitialize()
     self.loaded = true
 end
-
+--]]
