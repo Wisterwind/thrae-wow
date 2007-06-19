@@ -251,13 +251,15 @@ local function TooltipFormat(unit)
             -- We like to know who our guild members are.
             if guildName and IsInGuild() and guildName == GetGuildInfo("player")
             and db["Friends"] ~= 2 then
+            --[[
                 if not db["Friends"] and not UnitIsUnit(unit, "player")
                 and db["BGColor"] ~= 3 and db["BGColor"] ~= 1 then
                     bdR,bdG,bdB = 0.4, 0.1, 0.5
                     line:SetTextColor( GameTooltipTextLeft1:GetTextColor() )
                 else
+            --]]
                     line:SetTextColor( 0.58, 0.0, 0.83 )
-                end
+            --    end
             else -- other guilds or NPC trade line
                 line:SetTextColor( GameTooltipTextLeft1:GetTextColor() )
             end
