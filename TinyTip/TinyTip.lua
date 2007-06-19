@@ -347,7 +347,7 @@ local function TooltipFormat(unit)
     end -- the Level Line
 
 
-    if db["BGColor"] ~= 1 or ( isPlayerOrPet and not ["BGColor"] ) then
+    if db["BGColor"] ~= 1 and (isPlayerOrPet or deadOrTappedColour or db["BGColor"] == 2) then
         if db["BGColor"] == 3 and not deadOrTappedColour then
             bdR,bdG,bdB = 0,0,0
         end
@@ -355,7 +355,7 @@ local function TooltipFormat(unit)
     end
 
     if db["Border"] ~= 1 then
-        if db["Border"] == 2 then
+        if db["Border"] == 2 and not deadOrTappedColour then
             GameTooltip:SetBackdropBorderColor(0,0,0,0) -- ghetto hide
         else
             GameTooltip:SetBackdropBorderColor(bdR * 1.5 , bdG * 1.5, bdB * 1.5, 1)
@@ -464,7 +464,7 @@ if not TinyTip.dongled then
                     --[[
                     ["FormatDisabled"] = true,   -- This will disable all formating, but not positioning.
                     ["BGColor"] = 1,             -- 1 will disable colouring the background. 3 will make it black,
-                                                 -- except for Tapped/Dead.
+                                                 -- except for Tapped/Dead. 2 will colour NPCs as well as PCs.
                     ["Border"] = 1,              -- 1 will disable colouring the border. 2 will make it always black.
                     ["FAnchor"] = nil,           -- "BOTTOMRIGHT", "BOTTOMLEFT", "TOPRIGHT", "TOPLEFT", "CURSOR"
                                                  -- Used only in Frames. TinyTip default is BOTTOMRIGHT.
