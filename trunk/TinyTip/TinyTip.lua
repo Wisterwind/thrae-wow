@@ -127,31 +127,17 @@ local function TooltipFormat(unit)
     -- First Line
     local isPlayer = UnitIsPlayer(unit)
     local name, realm = UnitName(unit)
-    local rankName, rankNumber = GetPVPRankInfo(UnitPVPRank(unit), unit)
-    if isPlayer then
-        if rankNumber > 0 and db["PvPRank"] ~= 1 then
-            if rankName and db["PvPRank"] == 2 then -- RankName UnitName PlayerRealm
-                GameTooltipTextLeft1:SetText( "[ " ..  tmp2 .. " ] " .. (name or L.Unknown) .. ( (realm and
-                                                realm ~= PlayerRealm and ( (db["KeyServer"] and
-                                                "(*)") or (" (" .. realm .. ")") ) ) or "") )
-            elseif db["PvPRank"] == 3 then -- UnitName PlayerRealm RankNumber
-                GameTooltipTextLeft1:SetText( string.format("%s " .. L.strformat_ranknumber,
-                                                (name or L.Unknown) .. ( (realm and
-                                                realm ~= PlayerRealm and ( (db["KeyServer"] and
-                                                "(*)") or (" (" .. realm .. ")") ) ) or ""),
-                                                rankNumber))
-            else -- RankNumber UnitName PlayerRealm (default)
-                GameTooltipTextLeft1:SetText( string.format(L.strformat_ranknumber .. " %s",
-                                                rankNumber,
-                                                (name or L.Unknown) .. ( (realm and
-                                                realm ~= PlayerRealm and ( (db["KeyServer"] and
-                                                "(*)") or (" (" .. realm .. ")") ) ) or "")))
-            end
-        else -- UnitName PlayerRealm
-            GameTooltipTextLeft1:SetText( (name or L.Unknown) .. ( (realm and
-                                            realm ~= PlayerRealm and ( (db["KeyServer"] and
-                                            "(*)") or (" (" .. realm .. ")") ) ) or "") )
-        end
+    local rankNumber
+    _, rankNumber = GetPVPRankInfo(UnitPVPRank(unit), unit)
+    if isPlayer and rankNumber > 0 then
+        -- RankNumber UnitName PlayerRealm
+        GameTooltipTextLeft1:SetText( string.format(L.strformat_ranknumber .. " %s",
+                                      rankNumber,
+                                      (name or L.Unknown) .. ( (realm and
+                                      realm ~= PlayerRealm and (" (" .. realm .. ")") ) or "")))
+    else -- UnitName PlayerRealm
+        GameTooltipTextLeft1:SetText( (name or L.Unknown) .. ( (realm and
+                                      realm ~= PlayerRealm and (" (" .. realm .. ")") ) or ""))
     end
 
     -- Reaction coloring
@@ -289,7 +275,7 @@ local function TooltipFormat(unit)
             end
         end
 
-        local levelLineText = (not db["HideLevelText"] and LSpaceLevel) or ""
+        local levelLineText
         if level and level >= 1 then
             levelLineText = "|cFF" .. (deadOrTappedColour or levelColour or "FFCC00") ..
                              levelLineText .. level .. "|r"
@@ -303,42 +289,34 @@ local function TooltipFormat(unit)
         if isPlayer then
              local race = UnitRace(unit)
              levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "DDEEAA") ..
-                             (( not db["HideRace"] and race and (race .. " ") ) or "") .. "|r|cFF" ..
+                             (race or "") .. " |r|cFF" ..
                              (deadOrTappedColour or TinyTip:ColourPlayer(unit)) .. (UnitClass(unit) or "" ) .. "|r"
         else -- pet or npc
             if not isPlayerOrPet then
                 local npcType = UnitClassification(unit) -- Elite,etc. status
                 if npcType and npcType ~= "normal" then
                     if npcType == "elite" then
-                        levelLineText = levelLineText .. ((db["KeyElite"] and "") or " ") .. "|cFF" ..
-                                                            (deadOrTappedColour or "FFCC00") ..
-                                                            ((db["KeyElite"] and "+") or ELITE) .. "|r"
+                        levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "FFCC00") .. ELITE .. "|r"
                     elseif npcType == "worldboss" then
-                        levelLineText = levelLineText .. ((db["KeyElite"] and "") or " ") .. "|cFF" ..
-                                                            (deadOrTappedColour or "FF0000") ..
-                                                            ((db["KeyElite"] and "+++") or BOSS) .. "|r"
+                        levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "FF0000") .. BOSS .. "|r"
                     elseif npcType == "rare" then
-                        levelLineText = levelLineText .. ((db["KeyElite"] and "") or " ") .. "|cFF" ..
-                                                            (deadOrTappedColour or "FF66FF") ..
-                                                            ((db["KeyElite"] and "!") or ITEM_QUALITY3_DESC) .. "|r"
+                        levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "FF66FF") ..
+                                                         ITEM_QUALITY3_DESC .. "|r"
                     elseif npcType == "rareelite" then
-                        levelLineText = levelLineText .. ((db["KeyElite"] and "") or " ") .. "|cFF" ..
-                                                            (deadOrTappedColour or "FFAAFF") ..
-                                                            ((db["KeyElite"] and "!+") or L.RareElite) .. "|r"
+                        levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "FFAAFF") ..
+                                                            L["Rare Elite"] .. "|r"
                     else -- should never get here
                         levelLineText = levelLineText .. " [|cFF" ..
                                         (deadOrTappedColour or "FFFFFF") .. npcType .. "|r]"
                     end
                 end
              end
-             if not db["HideRace"] then
-                 if isPlayerOrPet then
-                    levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "DDEEAA") ..
-                                    (UnitCreatureFamily(unit) or "") .. "|r"
-                 else
-                    levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "DDEEAA") ..
-                                    (UnitCreatureType(unit) or "") .. "|r"
-                 end
+             if isPlayerOrPet then
+                 levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "DDEEAA") ..
+                                                 (UnitCreatureFamily(unit) or "") .. "|r"
+             else
+                 levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "DDEEAA") ..
+                                                 (UnitCreatureType(unit) or "") .. "|r"
              end
          end
 
