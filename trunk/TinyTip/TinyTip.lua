@@ -234,7 +234,7 @@ local function TooltipFormat(unit)
                 line:SetTextColor( GameTooltipTextLeft1:GetTextColor() )
             end
         end
-        for i, 3, afterLevelLine - 2, 1 do -- add misc. lines before level line
+        for i = 3, afterLevelLine - 2, 1 do -- add misc. lines before level line
             GameTooltip:AddLine( lines[i], GameTooltipTextLeft1:GetTextColor() )
         end
     end
