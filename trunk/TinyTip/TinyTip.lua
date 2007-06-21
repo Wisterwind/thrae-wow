@@ -115,14 +115,13 @@ local function TooltipFormat(unit)
     local guildName = GetGuildInfo(unit)
     local line, levelLine, afterLevelLine
     for i = 1,numLines,1 do
-        lines[i] = _G[ "GameTooltipTextLeft" .. i ]:GetText()
-        line = lines[i]
+        line = _G[ "GameTooltipTextLeft" .. i ]:GetText()
         if line and line ~= guildName and strfind(line, L.Level, 1, true) then
             levelLine = true
             afterLevelLine = i + 1
         end
     end
-    GameTooltip:ClearLines()
+    tooltip:ClearLines()
 
     -- First Line
     local isPlayer = UnitIsPlayer(unit)
@@ -269,7 +268,7 @@ local function TooltipFormat(unit)
             levelLineText = "|cFF" .. (deadOrTappedColour or levelColour or "FFCC00") ..
                             ">" .. (UnitLevel("player") + 10 ) .. "|r "
         else
-            levelLineText = "|cFF" .. (deadOrTappedColour or levelColour or "FFCC00") .. level .. "??|r "
+            levelLineText = "|cFF" .. (deadOrTappedColour or levelColour or "FFCC00") .. "??|r "
         end
 
         if isPlayer then
@@ -320,7 +319,11 @@ local function TooltipFormat(unit)
         for i = afterLevelLine, numLines, 1 do
             line = lines[i]
             if not strfind(line, PVP_ENABLED, 1, true) then
-                GameTooltip:AddLine( line, GameTooltipTextLeft1:GetTextColor() )
+                if deadOrTappedColor then
+                    GameTooltip:AddLine( line, GameTooltipTextLeft1:GetTextColor() )
+                else
+                    GameTooltip:AddLine( line )
+                end
             end
         end
     end
@@ -360,11 +363,11 @@ end
 ---------------------------------------------------------]]
 
 local Original_GameTooltip_SetDefaultAnchor = nil
-local function SetDefaultAnchor(tooltip,owner,...)
+local function SetDefaultAnchor(_tooltip,owner,...)
     if Original_GameTooltip_SetDefaultAnchor then
         Original_GameTooltip_SetDefaultAnchor(tooltip,owner,...)
     end
-    if tooltip == GameTooltip and not TinyTip.onstandby then
+    if not TinyTip.onstandby and tooltip == GameTooltip and GameTooltip:GetUnit() then
         if owner ~= UIParent then
             if db["FAnchor"] or db["FOffX"] or db["FOffY"] then
                 if db["FAnchor"] == "CURSOR" then
@@ -408,11 +411,6 @@ function TinyTip:ReInitialize()
         PlayerRealm = GetRealmName()
         self:SmoothBorder()
 
-        if Original_GameTooltip_OnTooltipCleared == nil then
-            Original_GameTooltip_OnTooltipCleared = GameTooltip:GetScript("OnTooltipCleared")
-            if not Original_GameTooltip_OnTooltipCleared then Original_GameTooltip_OnTooltipCleared = false end
-            GameTooltip:SetScript("OnTooltipCleared", OnTooltipCleared)
-        end
         if Original_GameTooltip_SetDefaultAnchor == nil then
             Original_GameTooltip_SetDefaultAnchor = _G.GameTooltip_SetDefaultAnchor
             if not Original_GameTooltip_SetDefaultAnchor then Original_GameTooltip_SetDefaultAnchor = false end
@@ -426,7 +424,6 @@ function TinyTip:ReInitialize()
 end
 
 function TinyTip:Standby()
-    lines = nil
     self.onstandby = true
     --self:UnregisterAllEvents()
     self:SmoothBorder()
@@ -474,7 +471,7 @@ if not TinyTip.dongled then
             end
         end
     end
-    local EventFrame = CreateFrame("Frame", UIParent)
+    local EventFrame = CreateFrame("Frame", nil, UIParent)
     EventFrame:RegisterEvent("ADDON_LOADED")
     EventFrame:RegisterEvent("PLAYER_LOGIN")
     EventFrame:SetScript("OnEvent", OnEvent)
