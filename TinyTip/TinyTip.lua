@@ -109,6 +109,7 @@ function TinyTip:ColourPlayer(unit)
     return "FFFFFF"
 end
 
+local lines
 local function TooltipFormat(unit)
     if not UnitExists(unit) then return end
 
@@ -116,13 +117,14 @@ local function TooltipFormat(unit)
     local guildName = GetGuildInfo(unit)
     local line, levelLine, afterLevelLine
     for i = 1,numLines,1 do
-        line = _G[ "GameTooltipTextLeft" .. i ]:GetText()
+        lines[i] = _G[ "GameTooltipTextLeft" .. i ]:GetText()
+        line = lines[i]
         if line and line ~= guildName and strfind(line, L.Level, 1, true) then
-            levelLine = _G[ "GameTooltipTextLeft" .. i ]
+            levelLine = true
             afterLevelLine = i + 1
-            break
         end
     end
+    GameTooltip:ClearLines()
 
     -- First Line
     local isPlayer = UnitIsPlayer(unit)
@@ -131,13 +133,13 @@ local function TooltipFormat(unit)
     _, rankNumber = GetPVPRankInfo(UnitPVPRank(unit), unit)
     if isPlayer and rankNumber > 0 then
         -- RankNumber UnitName PlayerRealm
-        GameTooltipTextLeft1:SetText( string.format(L.strformat_ranknumber .. " %s",
-                                      rankNumber,
-                                      (name or L.Unknown) .. ( (realm and
-                                      realm ~= PlayerRealm and (" (" .. realm .. ")") ) or "")))
+        GameTooltip:AddLine( string.format(L.strformat_ranknumber .. " %s",
+                             rankNumber,
+                             (name or L.Unknown) .. ( (realm and
+                             realm ~= PlayerRealm and (" (" .. realm .. ")") ) or "")))
     else -- UnitName PlayerRealm
-        GameTooltipTextLeft1:SetText( (name or L.Unknown) .. ( (realm and
-                                      realm ~= PlayerRealm and (" (" .. realm .. ")") ) or ""))
+        GameTooltip:AddLine( (name or L.Unknown) .. ( (realm and
+                             realm ~= PlayerRealm and (" (" .. realm .. ")") ) or ""))
     end
 
     -- Reaction coloring
@@ -191,24 +193,6 @@ local function TooltipFormat(unit)
         end
     end
 
-    -- remove PvP line, if it exists
-    if UnitIsPVP(unit) and not db["ReactionText"] then
-        local text
-        for i=afterLevelLine,numLines,1 do
-            line = _G["GameTooltipTextLeft" .. i]
-            if line then
-                text = line:GetText()
-                if text and strfind(text, PVP_ENABLED, 1, true) then
-                    line:SetText(nil)
-                    line:ClearAllPoints()
-                    line:SetPoint("TOPLEFT", _G["GameTooltipTextLeft" .. (i-1)] or levelLine, "BOTTOMLEFT", 0, 1)
-                    line:Hide()
-                    break
-                end
-            end
-        end
-    end
-
     -- We like to know who our friends are.
     if isPlayer and reactionText == FACTION_STANDING_LABEL5 and realm == PlayerRealm and db["Friends"] ~= 2 then
         local numFriends = GetNumFriends()
@@ -229,10 +213,11 @@ local function TooltipFormat(unit)
     -- Set the color of the trade or guild line, if it's available. This
     -- line comes before the level line.
     if afterLevelLine and afterLevelLine > 3 then
-        line = _G["GameTooltipTextLeft" .. (afterLevelLine - 2)]
+        line = lines[2]
 
-        if line and line:IsShown() then
-            line:SetText( "<" .. line:GetText().. ">" )
+        if line then
+            GameTooltip:AddLine( "<" .. line.. ">" )
+            line = _G["GameTooltipTextLeft" .. GameTooltip:NumLines()]
             -- We like to know who our guild members are.
             if guildName and IsInGuild() and guildName == GetGuildInfo("player")
             and db["Friends"] ~= 2 then
@@ -248,6 +233,9 @@ local function TooltipFormat(unit)
             else -- other guilds or NPC trade line
                 line:SetTextColor( GameTooltipTextLeft1:GetTextColor() )
             end
+        end
+        for i, 3, afterLevelLine - 2, 1 do -- add misc. lines before level line
+            GameTooltip:AddLine( lines[i], GameTooltipTextLeft1:GetTextColor() )
         end
     end
 
@@ -326,9 +314,18 @@ local function TooltipFormat(unit)
                              ( ( isDead and CORPSE ) or L.Tapped ) .. ")|r"
          end
 
-         levelLine:SetText( levelLineText )
+         GameTooltip:AddLine( levelLineText )
     end -- the Level Line
 
+    -- add missing lines
+    if afterLevelLine then
+        for i = afterLevelLine, numLines, 1 do
+            line = lines[i]
+            if not strfind(line, PVP_ENABLED, 1, true) then
+                GameTooltip:AddLine( line, GameTooltipTextLeft1:GetTextColor() )
+            end
+        end
+    end
 
     if db["BGColor"] ~= 1 and (isPlayerOrPet or deadOrTappedColour or db["BGColor"] == 2) then
         if db["BGColor"] == 3 and not deadOrTappedColour then
@@ -340,10 +337,8 @@ local function TooltipFormat(unit)
     if db["Border"] ~= 1 then
         if db["Border"] == 2 and not deadOrTappedColour then
             GameTooltip:SetBackdropBorderColor(0,0,0,0) -- ghetto hide
-        elseif isPlayerOrPet or db["Border"] == 3 then
-            GameTooltip:SetBackdropBorderColor(bdR * 1.5 , bdG * 1.5, bdB * 1.5, 1)
         else
-            GameTooltip:SetBackdropBorderColor( bdR, bdG, bdB, 1 )
+            GameTooltip:SetBackdropBorderColor(bdR * 1.5 , bdG * 1.5, bdB * 1.5, 1)
         end
     end
 
@@ -410,10 +405,16 @@ end
 -- Called when coming out of Standby, first initialization, or options change.
 function TinyTip:ReInitialize()
        -- self:UnregisterAllEvents()
+       if not lines then lines = {} end
 
         PlayerRealm = GetRealmName()
         self:SmoothBorder()
 
+        if Original_GameTooltip_OnTooltipCleared == nil then
+            Original_GameTooltip_OnTooltipCleared = GameTooltip:GetScript("OnTooltipCleared")
+            if not Original_GameTooltip_OnTooltipCleared then Original_GameTooltip_OnTooltipCleared = false end
+            GameTooltip:SetScript("OnTooltipCleared", OnTooltipCleared)
+        end
         if Original_GameTooltip_SetDefaultAnchor == nil then
             Original_GameTooltip_SetDefaultAnchor = _G.GameTooltip_SetDefaultAnchor
             if not Original_GameTooltip_SetDefaultAnchor then Original_GameTooltip_SetDefaultAnchor = false end
@@ -427,6 +428,7 @@ function TinyTip:ReInitialize()
 end
 
 function TinyTip:Standby()
+    lines = nil
     self.onstandby = true
     --self:UnregisterAllEvents()
     self:SmoothBorder()
