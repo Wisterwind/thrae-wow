@@ -115,13 +115,16 @@ local function TooltipFormat(unit)
     local guildName = GetGuildInfo(unit)
     local line, levelLine, afterLevelLine
     for i = 1,numLines,1 do
-        line = _G[ "GameTooltipTextLeft" .. i ]:GetText()
-        if line and line ~= guildName and strfind(line, L.Level, 1, true) then
-            levelLine = true
-            afterLevelLine = i + 1
+        line = _G[ "GameTooltipTextLeft" .. i ]
+        if line:IsShown() then
+            line = line:GetText()
+            if line and line ~= guildName and strfind(line, L.Level, 1, true) then
+                levelLine = true
+                afterLevelLine = i + 1
+            end
         end
     end
-    tooltip:ClearLines()
+    GameTooltip:ClearLines()
 
     -- First Line
     local isPlayer = UnitIsPlayer(unit)
