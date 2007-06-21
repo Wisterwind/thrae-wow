@@ -26,8 +26,6 @@ local L = _G.TinyTipLocale
 -- Local Variables
 ----------------------------------------------]]
 
-local LSpaceLevel = L.Level .. " "
-
 local ClassColours = {}
 for k,v in pairs(RAID_CLASS_COLORS) do
     ClassColours[k] = strformat("%2x%2x%2x", v.r*255, v.g*255, v.b*255)
@@ -266,12 +264,12 @@ local function TooltipFormat(unit)
         local levelLineText
         if level and level >= 1 then
             levelLineText = "|cFF" .. (deadOrTappedColour or levelColour or "FFCC00") ..
-                             levelLineText .. level .. "|r"
+                            level .. "|r "
         elseif db["LevelGuess"] and ulevel and ulevel == -1 and ulevel < 60 then
             levelLineText = "|cFF" .. (deadOrTappedColour or levelColour or "FFCC00") ..
-                             levelLineText .. ">" .. (UnitLevel("player") + 10 ) .. "|r"
+                            ">" .. (UnitLevel("player") + 10 ) .. "|r "
         else
-            levelLineText = "|cFF" .. (deadOrTappedColour or levelColour or "FFCC00") .. levelLineText .. "??|r"
+            levelLineText = "|cFF" .. (deadOrTappedColour or levelColour or "FFCC00") .. level .. "??|r "
         end
 
         if isPlayer then
