@@ -265,12 +265,12 @@ function TinyTip:TooltipFormat(unit)
         local levelLineText
         if level and level >= 1 then
             levelLineText = "|cFF" .. (deadOrTappedColour or levelColour or "FFCC00") ..
-                            level .. "|r "
+                            level .. "|r"
         elseif db["LevelGuess"] and ulevel and ulevel == -1 and ulevel < 60 then
             levelLineText = "|cFF" .. (deadOrTappedColour or levelColour or "FFCC00") ..
-                            ">" .. (UnitLevel("player") + 10 ) .. "|r "
+                            ">" .. (UnitLevel("player") + 10 ) .. "|r"
         else
-            levelLineText = "|cFF" .. (deadOrTappedColour or levelColour or "FFCC00") .. "??|r "
+            levelLineText = "|cFF" .. (deadOrTappedColour or levelColour or "FFCC00") .. "??|r"
         end
 
         if isPlayer then
@@ -373,7 +373,7 @@ local function SetDefaultAnchor(tooltip,owner,...)
     if Original_GameTooltip_SetDefaultAnchor then
         Original_GameTooltip_SetDefaultAnchor(tooltip,owner,...)
     end
-    if not TinyTip.onstandby and tooltip == GameTooltip and GameTooltip:GetUnit() then
+    if not TinyTip.onstandby and tooltip == GameTooltip then
         if owner ~= UIParent then
             if db["FAnchor"] or db["FOffX"] or db["FOffY"] then
                 if db["FAnchor"] == "CURSOR" then
