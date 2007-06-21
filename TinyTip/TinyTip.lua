@@ -107,8 +107,7 @@ function TinyTip:ColourPlayer(unit)
     return "FFFFFF"
 end
 
-local lines
-local function TooltipFormat(unit)
+function TinyTip:TooltipFormat(unit)
     if not UnitExists(unit) then return end
 
     local numLines = GameTooltip:NumLines()
@@ -278,7 +277,7 @@ local function TooltipFormat(unit)
              local race = UnitRace(unit)
              levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "DDEEAA") ..
                              (race or "") .. " |r|cFF" ..
-                             (deadOrTappedColour or TinyTip:ColourPlayer(unit)) .. (UnitClass(unit) or "" ) .. "|r"
+                             (deadOrTappedColour or self:ColourPlayer(unit)) .. (UnitClass(unit) or "" ) .. "|r"
         else -- pet or npc
             if not isPlayerOrPet then
                 local npcType = UnitClassification(unit) -- Elite,etc. status
@@ -346,7 +345,11 @@ local function TooltipFormat(unit)
         end
     end
 
+   -- if self.tmodules and self.isregistered["TinyTip_Format_BeforeShow"]  then self:ModuleMessage("TinyTip_Format_BeforeShow", unit, name, realm, guildName, isPlayer, isPlayerOrPet) end
+
     GameTooltip:Show() -- used to re-size gametooltip
+
+   -- if self.tmodules and self.isregistered["TinyTip_Format_AfterShow"] then self:ModuleMessage("TinyTip_Format_AfterShow", unit, name, realm, guildName, isPlayer, isPlayerOrPet) end
 end
 
 local Original_GameTooltip_OnTooltipSetUnit = nil
@@ -357,7 +360,7 @@ local function OnTooltipSetUnit(self,...)
     if not TinyTip.onstandby then
         local unit
         _, unit = self:GetUnit()
-        if not db["FormatDisabled"] then TooltipFormat(unit) end
+        if not db["FormatDisabled"] then TinyTip:TooltipFormat(unit) end
     end
 end
 
@@ -366,7 +369,7 @@ end
 ---------------------------------------------------------]]
 
 local Original_GameTooltip_SetDefaultAnchor = nil
-local function SetDefaultAnchor(_tooltip,owner,...)
+local function SetDefaultAnchor(tooltip,owner,...)
     if Original_GameTooltip_SetDefaultAnchor then
         Original_GameTooltip_SetDefaultAnchor(tooltip,owner,...)
     end
