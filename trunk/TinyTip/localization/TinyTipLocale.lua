@@ -14,10 +14,10 @@
 --]]
 
 TinyTipLocale = {
-    ["slash2"] = "/ttip",
     ["Tapped"] = "Tapped",
     ["Level"] = LEVEL,
     ["Unknown"] = UNKNOWN,
+    ["UnknownEntity"] = UKNOWNBEING,
     ["Rare Elite"] = string.format("%s %s", ITEM_QUALITY3_DESC, ELITE ),
     ["strformat_ranknumber"] = "[R %d]"
 }
