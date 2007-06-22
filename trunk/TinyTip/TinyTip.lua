@@ -107,6 +107,7 @@ function TinyTip:ColourPlayer(unit)
     return "FFFFFF"
 end
 
+local lines
 function TinyTip:TooltipFormat(unit)
     if not UnitExists(unit) then return end
 
@@ -114,7 +115,8 @@ function TinyTip:TooltipFormat(unit)
     local guildName = GetGuildInfo(unit)
     local line, levelLine, afterLevelLine
     for i = 1,numLines,1 do
-        line = _G[ "GameTooltipTextLeft" .. i ]
+        lines[i] = _G[ "GameTooltipTextLeft" .. i ]
+        line = lines[i]
         if line:IsShown() then
             line = line:GetText()
             if line and line ~= guildName and strfind(line, L.Level, 1, true) then
@@ -430,6 +432,7 @@ function TinyTip:ReInitialize()
 end
 
 function TinyTip:Standby()
+    lines = nil
     self.onstandby = true
     --self:UnregisterAllEvents()
     self:SmoothBorder()
