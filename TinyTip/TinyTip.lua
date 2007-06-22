@@ -136,10 +136,10 @@ function TinyTip:TooltipFormat(unit)
         -- RankNumber UnitName PlayerRealm
         GameTooltip:AddLine( string.format(L.strformat_ranknumber .. " %s",
                              rankNumber,
-                             (name or L.Unknown) .. ( (realm and
+                             (name or L.UnknownEntity) .. ( (realm and
                              realm ~= PlayerRealm and (" (" .. realm .. ")") ) or "")))
     else -- UnitName PlayerRealm
-        GameTooltip:AddLine( (name or L.Unknown) .. ( (realm and
+        GameTooltip:AddLine( (name or L.UnknownEntity) .. ( (realm and
                              realm ~= PlayerRealm and (" (" .. realm .. ")") ) or ""))
     end
 
@@ -302,10 +302,10 @@ function TinyTip:TooltipFormat(unit)
              end
              if isPlayerOrPet then
                  levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "DDEEAA") ..
-                                                 (UnitCreatureFamily(unit) or "") .. "|r"
+                                                 (UnitCreatureFamily(unit) or L.Unknown) .. "|r"
              else
                  levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "DDEEAA") ..
-                                                 (UnitCreatureType(unit) or "") .. "|r"
+                                                 (UnitCreatureType(unit) or L.Unknown) .. "|r"
              end
          end
 
