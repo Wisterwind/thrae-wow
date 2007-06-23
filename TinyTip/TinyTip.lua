@@ -35,10 +35,14 @@ local _, db, PlayerRealm
 
 -- _, TinyTip = GetAddOnInfo("TinyTip")
 -- TinyTip = DongleStub("Dongle-1.0"):New(TinyTip)
-if not _G.TinyTip then
-    _G.TinyTip = { ["dongled"] = nil }
+local module
+local modulecore = _G.TinyTipModuleCore
+if not modulecore then
+    module = {}
+else
+    _, module = GetAddOnInfo("TinyTip")
+    module = modulecore:NewModule(module)
 end
-local TinyTip = _G.TinyTip
 
 --[[
 function TinyTip:LoDRun(addon,sfunc,...)
@@ -57,50 +61,12 @@ end
 --]]
 
 --[[----------------------------------------------------------------------
--- Formating and Skinning
+-- Formating
 -------------------------------------------------------------------------]]
-
--- for Tem
-function TinyTip:SmoothBorder()
-    if not db["NormalBorder"] and not self.onstandby then
-        GameTooltip:SetBackdrop({
-            bgFile = "Interface/Tooltips/UI-Tooltip-Background",
-            edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
-            tile = false,
-            tileSize = 6,
-            edgeSize = 18,
-            insets = {
-                left = 4,
-                right = 4,
-                top = 4,
-                bottom = 4,
-            }
-        })
-
-        GameTooltip:SetBackdropColor( 0, 0, 0, 0.8)
-        GameTooltip:SetBackdropBorderColor( 0, 0, 0, 1)
-    else
-        GameTooltip:SetBackdrop({
-            bgFile = "Interface/Tooltips/UI-Tooltip-Background",
-            edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
-            tile = true,
-            tileSize = 16,
-            edgeSize = 16,
-            insets = {
-                left = 5,
-                right = 5,
-                top = 5,
-                bottom = 5,
-            }
-        })
-
-        GameTooltip:SetBackdropColor( 0, 0, 0, 1)
-    end
-end
 
 -- Return color format in HEX from Blizzard percentage RGB
 -- for the class.
-function TinyTip:ColourPlayer(unit)
+function module:ColourPlayer(unit)
     local c
     _,c = UnitClass(unit)
     if c and ClassColours[c] then return ClassColours[c] end
@@ -108,7 +74,7 @@ function TinyTip:ColourPlayer(unit)
 end
 
 local lines
-function TinyTip:TooltipFormat(unit)
+function module:TooltipFormat(unit)
     if not UnitExists(unit) then return end
 
     local numLines = GameTooltip:NumLines()
@@ -347,11 +313,12 @@ function TinyTip:TooltipFormat(unit)
         end
     end
 
-   -- if self.tmodules and self.isregistered["TinyTip_Format_BeforeShow"]  then self:ModuleMessage("TinyTip_Format_BeforeShow", unit, name, realm, guildName, isPlayer, isPlayerOrPet) end
+    if modulecore then modulecore:TriggerMessage("TinyTip_Basic_BeforeShow", unit, name, realm, guildName, isPlayer, isPlayerOrPet) end
 
     GameTooltip:Show() -- used to re-size gametooltip
 
-   -- if self.tmodules and self.isregistered["TinyTip_Format_AfterShow"] then self:ModuleMessage("TinyTip_Format_AfterShow", unit, name, realm, guildName, isPlayer, isPlayerOrPet) end
+    if modulecore then modulecore:TriggerMessage("TinyTip_Basic_AfterShow", unit, name, realm, guildName, isPlayer, isPlayerOrPet) end
+
 end
 
 local Original_GameTooltip_OnTooltipSetUnit = nil
@@ -359,10 +326,10 @@ local function OnTooltipSetUnit(self,...)
     if Original_Gametooltip_OnTooltipSetUnit then
         Original_GameTooltip_SetUnit(self,...)
     end
-    if not TinyTip.onstandby then
+    if not module.onstandby then
         local unit
         _, unit = self:GetUnit()
-        if not db["FormatDisabled"] then TinyTip:TooltipFormat(unit) end
+        if not db["FormatDisabled"] then module:TooltipFormat(unit) end
     end
 end
 
@@ -375,7 +342,7 @@ local function SetDefaultAnchor(tooltip,owner,...)
     if Original_GameTooltip_SetDefaultAnchor then
         Original_GameTooltip_SetDefaultAnchor(tooltip,owner,...)
     end
-    if not TinyTip.onstandby and tooltip == GameTooltip then
+    if not module.onstandby and tooltip == GameTooltip then
         if owner ~= UIParent then
             if db["FAnchor"] or db["FOffX"] or db["FOffY"] then
                 if db["FAnchor"] == "CURSOR" then
@@ -408,75 +375,77 @@ local function SetDefaultAnchor(tooltip,owner,...)
 end
 
 --[[-------------------------------------------------------
--- Standby Modes
+-- Initialization States
 ----------------------------------------------------------]]
 
--- Called when coming out of Standby, first initialization, or options change.
-function TinyTip:ReInitialize()
-       -- self:UnregisterAllEvents()
-       if not lines then lines = {} end
+function module:ReInitialize()
+    if not lines then lines = {} end
 
-        PlayerRealm = GetRealmName()
-        self:SmoothBorder()
+    PlayerRealm = GetRealmName()
 
-        if Original_GameTooltip_SetDefaultAnchor == nil then
-            Original_GameTooltip_SetDefaultAnchor = _G.GameTooltip_SetDefaultAnchor
-            if not Original_GameTooltip_SetDefaultAnchor then Original_GameTooltip_SetDefaultAnchor = false end
-            _G.GameTooltip_SetDefaultAnchor = SetDefaultAnchor
-        end
-        if Original_GameTooltip_OnTooltipSetUnit == nil then
-            Original_GameTooltip_OnTooltipSetUnit = GameTooltip:GetScript("OnTooltipSetUnit")
-            if not Original_GameTooltip_OnTooltipSetUnit then Original_GameTooltip_OnTooltipSetUnit = false end
-            GameTooltip:SetScript("OnTooltipSetUnit", OnTooltipSetUnit)
-        end
+    if Original_GameTooltip_SetDefaultAnchor == nil then
+        Original_GameTooltip_SetDefaultAnchor = _G.GameTooltip_SetDefaultAnchor
+        if not Original_GameTooltip_SetDefaultAnchor then Original_GameTooltip_SetDefaultAnchor = false end
+        _G.GameTooltip_SetDefaultAnchor = SetDefaultAnchor
+    end
+    if Original_GameTooltip_OnTooltipSetUnit == nil then
+        Original_GameTooltip_OnTooltipSetUnit = GameTooltip:GetScript("OnTooltipSetUnit")
+        if not Original_GameTooltip_OnTooltipSetUnit then Original_GameTooltip_OnTooltipSetUnit = false end
+        GameTooltip:SetScript("OnTooltipSetUnit", OnTooltipSetUnit)
+    end
 end
 
-function TinyTip:Standby()
+function module:Standby()
     lines = nil
-    self.onstandby = true
-    --self:UnregisterAllEvents()
-    self:SmoothBorder()
 end
 
-function TinyTip:Wakeup()
-    self.onstandby = nil
-    self:ReInitialize()
+--[[
+function module:Wakeup()
+end
+--]]
+
+function module:Initialize()
+    if not modulecore and not db then
+        db = {
+            --[[
+                ["FormatDisabled"] = true,   -- This will disable all formating, but not positioning.
+                ["BGColor"] = 1,             -- 1 will disable colouring the background. 3 will make it black,
+                                             -- except for Tapped/Dead. 2 will colour NPCs as well as PCs.
+                ["Border"] = 1,          -- 1 will disable colouring the border. 2 will make it always black.
+                                             -- 3 will make it a similiar colour to the background for NPCs.
+                ["FAnchor"] = nil,       -- "BOTTOMRIGHT", "BOTTOMLEFT", "TOPRIGHT", "TOPLEFT", "CURSOR"
+                                                 -- Used only in Frames. TinyTip default is BOTTOMRIGHT.
+                ["MAnchor"] = "GAMEDEFAULT", -- Used only for Mouseover units. Options same as above, with the
+                                                 -- addition of "GAMEDEFAULT". TinyTip Default is CURSOR.
+                ["FOffX"] = nil,             -- X offset for Frame units (horizontal).
+                ["FOffY"] = nil,             -- Y offset for Frame units (vertical).
+                ["MOffX"] = nil,             -- Offset for Mouseover units (World Frame).
+                ["MOffY"] = nil              -- "     "       "       "       "
+            --]]
+            }
+    else
+        db = modulecore.db
+    end
 end
 
---[[-------------------------------------------------------
--- Initialization
-----------------------------------------------------------]]
+--[[
+function module:Enable()
+end
+--]]
 
-if not TinyTip.dongled then
+-- TinyTipModuleCore NOT loaded
+if not modulecore then
     local function OnEvent(self, event)
         if event == "ADDON_LOADED" then
-            if not db then
-                db = {
-                    --[[
-                    ["FormatDisabled"] = true,   -- This will disable all formating, but not positioning.
-                    ["BGColor"] = 1,             -- 1 will disable colouring the background. 3 will make it black,
-                                                 -- except for Tapped/Dead. 2 will colour NPCs as well as PCs.
-                    ["Border"] = 1,              -- 1 will disable colouring the border. 2 will make it always black.
-                                                 -- 3 will make it a similiar colour to the background for NPCs.
-                    ["FAnchor"] = nil,           -- "BOTTOMRIGHT", "BOTTOMLEFT", "TOPRIGHT", "TOPLEFT", "CURSOR"
-                                                 -- Used only in Frames. TinyTip default is BOTTOMRIGHT.
-                    ["MAnchor"] = "GAMEDEFAULT", -- Used only for Mouseover units. Options same as above, with the
-                                                 -- addition of "GAMEDEFAULT". TinyTip Default is CURSOR.
-                    ["FOffX"] = nil,             -- X offset for Frame units (horizontal).
-                    ["FOffY"] = nil,             -- Y offset for Frame units (vertical).
-                    ["MOffX"] = nil,             -- Offset for Mouseover units (World Frame).
-                    ["MOffY"] = nil              -- "     "       "       "       "
-                    --]]
-                }
-            end
-            if not TinyTip.loaded then
-                TinyTip:ReInitialize()
-                TinyTip.loaded = true
+            module:Initialize()
+            if not module.loaded then
+                module:ReInitialize()
+                module.loaded = true
             end
         elseif event == "PLAYER_LOGIN" then
-            if not TinyTip.loaded then
-                TinyTip:ReInitialize()
-                TinyTip.loaded = true
+            if not module.loaded then
+                module:ReInitialize()
+                module.loaded = true
             end
         end
     end
