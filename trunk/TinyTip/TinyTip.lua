@@ -313,11 +313,11 @@ function module:TooltipFormat(unit)
         end
     end
 
-    if modulecore then modulecore:TriggerMessage("TinyTip_Basic_BeforeShow", unit, name, realm, guildName, isPlayer, isPlayerOrPet) end
+    if modulecore then self:TriggerMessage("TinyTip_Basic_BeforeShow", unit, name, realm, guildName, isPlayer, isPlayerOrPet) end
 
     GameTooltip:Show() -- used to re-size gametooltip
 
-    if modulecore then modulecore:TriggerMessage("TinyTip_Basic_AfterShow", unit, name, realm, guildName, isPlayer, isPlayerOrPet) end
+    if modulecore then self:TriggerMessage("TinyTip_Basic_AfterShow", unit, name, realm, guildName, isPlayer, isPlayerOrPet) end
 
 end
 
