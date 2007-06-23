@@ -313,11 +313,11 @@ function module:TooltipFormat(unit)
         end
     end
 
-    if modulecore then self:TriggerMessage("TinyTip_Basic_BeforeShow", unit, name, realm, guildName, isPlayer, isPlayerOrPet) end
+    if self.TriggerMessage then self:TriggerMessage("TinyTip_Basic_BeforeShow", unit, name, realm, guildName, isPlayer, isPlayerOrPet) end
 
     GameTooltip:Show() -- used to re-size gametooltip
 
-    if modulecore then self:TriggerMessage("TinyTip_Basic_AfterShow", unit, name, realm, guildName, isPlayer, isPlayerOrPet) end
+    if self.TriggerMessage then self:TriggerMessage("TinyTip_Basic_AfterShow", unit, name, realm, guildName, isPlayer, isPlayerOrPet) end
 
 end
 
@@ -405,27 +405,24 @@ end
 --]]
 
 function module:Initialize()
-    if not modulecore and not db then
-        db = {
+    db = (modulecore and modulecore.db) or
+        {
             --[[
                 ["FormatDisabled"] = true,   -- This will disable all formating, but not positioning.
                 ["BGColor"] = 1,             -- 1 will disable colouring the background. 3 will make it black,
                                              -- except for Tapped/Dead. 2 will colour NPCs as well as PCs.
-                ["Border"] = 1,          -- 1 will disable colouring the border. 2 will make it always black.
+                ["Border"] = 1,              -- 1 will disable colouring the border. 2 will make it always black.
                                              -- 3 will make it a similiar colour to the background for NPCs.
-                ["FAnchor"] = nil,       -- "BOTTOMRIGHT", "BOTTOMLEFT", "TOPRIGHT", "TOPLEFT", "CURSOR"
-                                                 -- Used only in Frames. TinyTip default is BOTTOMRIGHT.
+                ["FAnchor"] = nil,           -- "BOTTOMRIGHT", "BOTTOMLEFT", "TOPRIGHT", "TOPLEFT", "CURSOR"
+                                             -- Used only in Frames. TinyTip default is BOTTOMRIGHT.
                 ["MAnchor"] = "GAMEDEFAULT", -- Used only for Mouseover units. Options same as above, with the
-                                                 -- addition of "GAMEDEFAULT". TinyTip Default is CURSOR.
+                                             -- addition of "GAMEDEFAULT". TinyTip Default is CURSOR.
                 ["FOffX"] = nil,             -- X offset for Frame units (horizontal).
                 ["FOffY"] = nil,             -- Y offset for Frame units (vertical).
                 ["MOffX"] = nil,             -- Offset for Mouseover units (World Frame).
                 ["MOffY"] = nil              -- "     "       "       "       "
             --]]
-            }
-    else
-        db = modulecore.db
-    end
+        }
 end
 
 --[[
@@ -435,8 +432,8 @@ end
 
 -- TinyTipModuleCore NOT loaded
 if not modulecore then
-    local function OnEvent(self, event)
-        if event == "ADDON_LOADED" then
+    local function OnEvent(self, event, arg1)
+        if event == "ADDON_LOADED" and arg1 == "TinyTip" then
             module:Initialize()
             if not module.loaded then
                 module:ReInitialize()
