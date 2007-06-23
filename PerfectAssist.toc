@@ -1,0 +1,21 @@
+## Interface: 20005
+## Author: Thrae
+## Title: PerfectAssist
+## Notes: Adds a PerfecTargets-style (minimalistic) unit frame for watching your main assist's target. Requires (and includes) SupplyAndDemand for loading on demand.
+## Version: 1.0
+
+## OptionalDeps: PerfectTargets
+
+## SavedVariables: PerfectAssistDB
+
+libs\Dongle\Dongle.lua
+libs\Dongle\DongleUtils.lua
+
+PerfectAssistLocale.lua
+TargetFrame.lua
+PerfectAssist.lua
+
+# Options Menu Module
+#modules\PerfectAssistOptions\libs\DewdropLib\Dewdrop-2.0.lua
+#modules\PerfectAssistOptions\PerfectAssistOptionsLocale.lua
+#modules\PerfectAssistOptions\PerfectAssistOptions.lua
