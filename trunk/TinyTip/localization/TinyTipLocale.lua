@@ -13,12 +13,15 @@
 --
 --]]
 
-TinyTipLocale = {
-    ["Tapped"] = "Tapped",
-    ["Level"] = LEVEL,
-    ["Unknown"] = UNKNOWN,
-    ["UnknownEntity"] = UKNOWNBEING,
-    ["Rare Elite"] = string.format("%s %s", ITEM_QUALITY3_DESC, ELITE ),
-    ["strformat_ranknumber"] = "[R %d]"
+local t = {
+        ["Tapped"] = "Tapped",
+        ["Level"] = LEVEL,
+        ["Unknown"] = UNKNOWN,
+        ["UnknownEntity"] = UKNOWNBEING,
+        ["Rare Elite"] = string.format("%s %s", ITEM_QUALITY3_DESC, ELITE ),
+        ["strformat_ranknumber"] = "[R %d]"
 }
 
+-- support for TinyTipModuleCore
+TinyTipLocale = (TinyTipLocale and setmetatable(t, {__index=TinyTipLocale})) or t
+t = nil
