@@ -9,7 +9,7 @@
 -- became TinyTip.
 --
 -- Note: See bottom of code for instructions on manually changing database
--- values (within the OnEvent function).
+-- values (within the Initialize function).
 --]]
 
 local _G = getfenv(0)
@@ -373,9 +373,10 @@ local function SetDefaultAnchor(tooltip,owner,...)
     if not module.onstandby and tooltip == GameTooltip then
         EventFrame:SetScript("OnUpdate", nil)
         if owner ~= UIParent then
-            if db["FAnchor"] or db["FOffX"] or db["FOffY"] then
+            if db["FAnchor"] or db["FOffX"] ~= nil or db["FOffY"] ~= nil then
                 if db["FAnchor"] == "CURSOR" then
-                    if db["FOffX"] > 0 or db["FOffY"] > 0 or db["FCursorAnchor"] then
+                    if (db["FOffX"] ~= nil and db["FOffX"] > 0) or (db["FOffY"] ~= nil and db["FOffY"] > 0) or
+                    db["FCursorAnchor"] then
                         EventFrame.OffX,EventFrame.OffY,EventFrame.Anchor = db["FOffX"], db["FOffY"], db["FCursorAnchor"]
                         EventFrame:SetScript("OnUpdate", "Anchor_OnUpdate")
                     else
@@ -391,9 +392,10 @@ local function SetDefaultAnchor(tooltip,owner,...)
                                      (db["FOffY"] or 0) + ((not db["FAnchor"] and CONTAINER_OFFSET_Y) or 0))
                 end
             end
-        elseif db["MAnchor"] ~= "GAMEDEFAULT" or db["MOffX"] or db["MOffY"] then
+        elseif db["MAnchor"] ~= "GAMEDEFAULT" or db["MOffX"] ~= nil or db["MOffY"] ~= nil then
             if not db["MAnchor"] then
-                if db["MOffX"] > 0 or db["MOffY"] > 0 or db["MCursorAnchor"] then
+                if (db["MOffX"] ~= nil and db["MOffX"] > 0) or (db["MOffY"] ~= nil and db["MOffY"] > 0) or
+                db["MCursorAnchor"] then
                     EventFrame.OffX,EventFrame.OffY,EventFrame.Anchor = db["MOffX"], db["MOffY"], db["MCursorAnchor"]
                     EventFrame:SetScript("OnUpdate", "Anchor_OnUpdate")
                 else
