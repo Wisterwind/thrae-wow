@@ -346,7 +346,7 @@ local function Anchor_OnUpdate(self)
         local x,y = getcpos()
         local uiscale,tscale = UIParent:GetScale(), GameTooltip:GetScale()
         GameTooltip:ClearAllPoints()
-        GameTooltip:SetPoint("BOTTOM", UIParent, "BOTTOMLEFT",
+        GameTooltip:SetPoint(self.Anchor or "BOTTOM", UIParent, "BOTTOMLEFT",
                              (x + (self.OffX or 0)) / uiscale / tscale,
                              (y + (self.OffY or 0)) / uiscale / tscale)
 end
@@ -361,8 +361,8 @@ local function SetDefaultAnchor(tooltip,owner,...)
         if owner ~= UIParent then
             if db["FAnchor"] or db["FOffX"] or db["FOffY"] then
                 if db["FAnchor"] == "CURSOR" then
-                    if db["FOffX"] > 0 or db["FOffY"] > 0 then
-                        EventFrame.OffX,EventFrame.OffY = db["FOffX"], db["FOffY"]
+                    if db["FOffX"] > 0 or db["FOffY"] > 0 or db["FCursorAnchor"] then
+                        EventFrame.OffX,EventFrame.OffY,EventFrame.Anchor = db["FOffX"], db["FOffY"], db["FCursorAnchor"]
                         EventFrame:SetScript("OnUpdate", "Anchor_OnUpdate")
                     else
                         tooltip:SetOwner(owner, "ANCHOR_CURSOR")
@@ -379,8 +379,8 @@ local function SetDefaultAnchor(tooltip,owner,...)
             end
         elseif db["MAnchor"] ~= "GAMEDEFAULT" or db["MOffX"] or db["MOffY"] then
             if not db["MAnchor"] then
-                if db["MOffX"] > 0 or db["MOffY"] > 0 then
-                    EventFrame.OffX,EventFrame.OffY = db["MOffX"], db["MOffY"]
+                if db["MOffX"] > 0 or db["MOffY"] > 0 or db["MCursorAnchor"] then
+                    EventFrame.OffX,EventFrame.OffY,EventFrame.Anchor = db["MOffX"], db["MOffY"], db["MCursorAnchor"]
                     EventFrame:SetScript("OnUpdate", "Anchor_OnUpdate")
                 else
                     tooltip:SetOwner(owner, "ANCHOR_CURSOR")
@@ -448,8 +448,12 @@ function module:Initialize()
                                              -- 3 will make it a similiar colour to the background for NPCs.
                 ["FAnchor"] = nil,           -- "BOTTOMRIGHT", "BOTTOMLEFT", "TOPRIGHT", "TOPLEFT", "CURSOR"
                                              -- Used only in Frames. TinyTip default is BOTTOMRIGHT.
+                ["FCursorAnchor"] = nil,     -- Which side of the cursor to anchor for frame units.
+                                             -- TinyTip's default is BOTTOM.
                 ["MAnchor"] = "GAMEDEFAULT", -- Used only for Mouseover units. Options same as above, with the
                                              -- addition of "GAMEDEFAULT". TinyTip Default is CURSOR.
+                ["MCursorAnchor"] = nil,     -- Which side of the cursor to anchor for mouseover (world).
+                                             -- TinyTip's default is BOTTOM.
                 ["FOffX"] = nil,             -- X offset for Frame units (horizontal).
                 ["FOffY"] = nil,             -- Y offset for Frame units (vertical).
                 ["MOffX"] = nil,             -- Offset for Mouseover units (World Frame).
