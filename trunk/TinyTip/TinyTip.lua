@@ -444,7 +444,8 @@ end
 function module:Initialize()
     db = db or
         {
-            -- The below options are commented out by default.
+            -- The below options are commented out by default. To select the
+            -- TinyTip default, set it to nil.
             --[[
                 ["FormatDisabled"] = nil,    -- This will disable all formating is set to true.
                 ["BGColor"] = nil,             -- 1 will disable colouring the background. 3 will make it black,
