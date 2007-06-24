@@ -26,12 +26,7 @@ local L = _G.TinyTipLocale
 -- Local Variables
 ----------------------------------------------]]
 
-local ClassColours = {}
-for k,v in pairs(RAID_CLASS_COLORS) do
-    ClassColours[k] = strformat("%2x%2x%2x", v.r*255, v.g*255, v.b*255)
-end
-
-local _, db, PlayerRealm
+local _, db, PlayerRealm, EventFrame, ClassColours
 
 -- _, TinyTip = GetAddOnInfo("TinyTip")
 -- TinyTip = DongleStub("Dongle-1.0"):New(TinyTip)
@@ -329,6 +324,7 @@ local function OnTooltipSetUnit(self,...)
     if not module.onstandby then
         local unit
         _, unit = self:GetUnit()
+        self.unit = unit
         if not db["FormatDisabled"] then module:TooltipFormat(unit) end
     end
 end
@@ -337,16 +333,40 @@ end
 -- Anchoring and Positioning
 ---------------------------------------------------------]]
 
+-- Used to stick GameTooltip to the cursor with offsets.
+local getcpos = _G.GetCursorPosition
+local function Anchor_OnUpdate(self)
+        local unit = GameTooltip:GetUnit()
+        if not unit or not UnitExists(unit) then
+            if db["Fade"] ~= 1 or GameTooltip:GetAlpha() < 0.1 then
+                self:SetScript("OnUpdate", nil)
+                return
+            end
+        end
+        local x,y = getcpos()
+        local uiscale,tscale = UIParent:GetScale(), GameTooltip:GetScale()
+        GameTooltip:ClearAllPoints()
+        GameTooltip:SetPoint("BOTTOM", UIParent, "BOTTOMLEFT",
+                             (x + (self.OffX or 0)) / uiscale / tscale,
+                             (y + (self.OffY or 0)) / uiscale / tscale)
+end
+
 local Original_GameTooltip_SetDefaultAnchor = nil
 local function SetDefaultAnchor(tooltip,owner,...)
     if Original_GameTooltip_SetDefaultAnchor then
         Original_GameTooltip_SetDefaultAnchor(tooltip,owner,...)
     end
     if not module.onstandby and tooltip == GameTooltip then
+        EventFrame:SetScript("OnUpdate", nil)
         if owner ~= UIParent then
             if db["FAnchor"] or db["FOffX"] or db["FOffY"] then
                 if db["FAnchor"] == "CURSOR" then
+                    if db["FOffX"] > 0 or db["FOffY"] > 0 then
+                        EventFrame.OffX,EventFrame.OffY = db["FOffX"], db["FOffY"]
+                        EventFrame:SetScript("OnUpdate", "Anchor_OnUpdate")
+                    else
                         tooltip:SetOwner(owner, "ANCHOR_CURSOR")
+                    end
                 else
                     tooltip:SetOwner(owner, "ANCHOR_NONE")
                     tooltip:ClearAllPoints()
@@ -359,7 +379,12 @@ local function SetDefaultAnchor(tooltip,owner,...)
             end
         elseif db["MAnchor"] ~= "GAMEDEFAULT" or db["MOffX"] or db["MOffY"] then
             if not db["MAnchor"] then
-                tooltip:SetOwner(owner, "ANCHOR_CURSOR")
+                if db["MOffX"] > 0 or db["MOffY"] > 0 then
+                    EventFrame.OffX,EventFrame.OffY = db["MOffX"], db["MOffY"]
+                    EventFrame:SetScript("OnUpdate", "Anchor_OnUpdate")
+                else
+                    tooltip:SetOwner(owner, "ANCHOR_CURSOR")
+                end
             else
                 tooltip:SetOwner(owner, "ANCHOR_NONE")
                 tooltip:ClearAllPoints()
@@ -379,9 +404,17 @@ end
 ----------------------------------------------------------]]
 
 function module:ReInitialize()
-    if not lines then lines = {} end
+    if not db["FormatDisabled"] then
+        if not ClassColours then
+            ClassColours = {}
+            for k,v in pairs(RAID_CLASS_COLORS) do
+                ClassColours[k] = strformat("%2x%2x%2x", v.r*255, v.g*255, v.b*255)
+            end
+        end
+        if not lines then lines = {} end
 
-    PlayerRealm = GetRealmName()
+        PlayerRealm = GetRealmName()
+    end
 
     if Original_GameTooltip_SetDefaultAnchor == nil then
         Original_GameTooltip_SetDefaultAnchor = _G.GameTooltip_SetDefaultAnchor
@@ -438,15 +471,17 @@ if not modulecore then
             if not module.loaded then
                 module:ReInitialize()
                 module.loaded = true
+                self:SetScript("OnEvent", nil)
             end
         elseif event == "PLAYER_LOGIN" then
             if not module.loaded then
                 module:ReInitialize()
                 module.loaded = true
+                self:SetScript("OnEvent", nil)
             end
         end
     end
-    local EventFrame = CreateFrame("Frame", nil, UIParent)
+    EventFrame = CreateFrame("Frame", nil, UIParent)
     EventFrame:RegisterEvent("ADDON_LOADED")
     EventFrame:RegisterEvent("PLAYER_LOGIN")
     EventFrame:SetScript("OnEvent", OnEvent)
