@@ -446,16 +446,16 @@ function module:Initialize()
         {
             -- The below options are commented out by default.
             --[[
-                ["FormatDisabled"] = true,   -- This will disable all formating, but not positioning.
-                ["BGColor"] = 1,             -- 1 will disable colouring the background. 3 will make it black,
+                ["FormatDisabled"] = nil,    -- This will disable all formating is set to true.
+                ["BGColor"] = nil,             -- 1 will disable colouring the background. 3 will make it black,
                                              -- except for Tapped/Dead. 2 will colour NPCs as well as PCs.
-                ["Border"] = 1,              -- 1 will disable colouring the border. 2 will make it always black.
+                ["Border"] = nil,              -- 1 will disable colouring the border. 2 will make it always black.
                                              -- 3 will make it a similiar colour to the background for NPCs.
                 ["FAnchor"] = nil,           -- "BOTTOMRIGHT", "BOTTOMLEFT", "TOPRIGHT", "TOPLEFT", "CURSOR"
                                              -- Used only in Frames. TinyTip default is BOTTOMRIGHT.
                 ["FCursorAnchor"] = nil,     -- Which side of the cursor to anchor for frame units.
                                              -- TinyTip's default is BOTTOM.
-                ["MAnchor"] = "GAMEDEFAULT", -- Used only for Mouseover units. Options same as above, with the
+                ["MAnchor"] = nil,           -- Used only for Mouseover units. Options same as above, with the
                                              -- addition of "GAMEDEFAULT". TinyTip Default is CURSOR.
                 ["MCursorAnchor"] = nil,     -- Which side of the cursor to anchor for mouseover (world).
                                              -- TinyTip's default is BOTTOM.
