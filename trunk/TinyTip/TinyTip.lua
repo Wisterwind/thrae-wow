@@ -331,6 +331,7 @@ if not modulecore then
             _, unit = self:GetUnit()
             module:TooltipFormat(unit)
             GameTooltip:Show()
+            EventFrame.unit = unit
         end
         IgnoreOnTooltipCleared = nil
     end
@@ -351,6 +352,7 @@ if not modulecore then
         if OnUpdateSet and not IgnoreOnTooltipCleared then
             EventFrame:SetScript("OnUpdate", nil)
             OnUpdateSet = nil
+            EventFrame.unit = nil
         end
     end
 end
@@ -365,9 +367,8 @@ local SetDefaultAnchor
 local getcpos = _G.GetCursorPosition
 local IsMouseover
 local function Anchor_OnUpdate(self)
-        if IsMouseover and not UnitExists("mouseover") and db["Fade"] ~= 1 and GameTooltip:GetAlpha() < 0.1 then
-            EventFrame:SetScript("OnUpdate", nil)
-            OnUpdateSet = nil
+        if self.unit and not UnitExists(self.unit) and GameTooltip:GetAlpha() < (db["Alpha"] or 0.9) then
+            GameTooltip:Hide()
         end
         local x,y = getcpos()
         local uiscale,tscale = UIParent:GetScale(), GameTooltip:GetScale()
@@ -383,7 +384,7 @@ SetDefaultAnchor = function(tooltip,owner,...)
         Original_GameTooltip_SetDefaultAnchor(tooltip,owner,...)
     end
     if not module.onstandby and tooltip == GameTooltip then
-        EventFrame:SetScript("OnUpdate", nil)
+        if OnUpdateSet then EventFrame:SetScript("OnUpdate", nil) end
         if owner ~= UIParent then
             if db["FAnchor"] or db["FOffX"] ~= nil or db["FOffY"] ~= nil then
                 if db["FAnchor"] == "CURSOR" then
@@ -391,7 +392,7 @@ SetDefaultAnchor = function(tooltip,owner,...)
                     db["FCursorAnchor"] then
                         EventFrame.OffX,EventFrame.OffY,EventFrame.Anchor = db["FOffX"], db["FOffY"], db["FCursorAnchor"]
                         EventFrame:SetScript("OnUpdate", Anchor_OnUpdate)
-                        IsMouseover, OnUpdateSet = nil, true
+                        OnUpdateSet = true
                     else
                         tooltip:SetOwner(owner, "ANCHOR_CURSOR")
                     end
@@ -411,7 +412,7 @@ SetDefaultAnchor = function(tooltip,owner,...)
                 db["MCursorAnchor"] then
                     EventFrame.OffX,EventFrame.OffY,EventFrame.Anchor = db["MOffX"], db["MOffY"], db["MCursorAnchor"]
                     EventFrame:SetScript("OnUpdate", Anchor_OnUpdate)
-                    IsMouseover, OnUpdateSet = true
+                    OnUpdateSet
                 else
                     tooltip:SetOwner(owner, "ANCHOR_CURSOR")
                 end
