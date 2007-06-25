@@ -378,7 +378,7 @@ local function SetDefaultAnchor(tooltip,owner,...)
                     if (db["FOffX"] ~= nil and db["FOffX"] > 0) or (db["FOffY"] ~= nil and db["FOffY"] > 0) or
                     db["FCursorAnchor"] then
                         EventFrame.OffX,EventFrame.OffY,EventFrame.Anchor = db["FOffX"], db["FOffY"], db["FCursorAnchor"]
-                        EventFrame:SetScript("OnUpdate", "Anchor_OnUpdate")
+                        EventFrame:SetScript("OnUpdate", Anchor_OnUpdate)
                     else
                         tooltip:SetOwner(owner, "ANCHOR_CURSOR")
                     end
@@ -397,7 +397,7 @@ local function SetDefaultAnchor(tooltip,owner,...)
                 if (db["MOffX"] ~= nil and db["MOffX"] > 0) or (db["MOffY"] ~= nil and db["MOffY"] > 0) or
                 db["MCursorAnchor"] then
                     EventFrame.OffX,EventFrame.OffY,EventFrame.Anchor = db["MOffX"], db["MOffY"], db["MCursorAnchor"]
-                    EventFrame:SetScript("OnUpdate", "Anchor_OnUpdate")
+                    EventFrame:SetScript("OnUpdate", Anchor_OnUpdate)
                 else
                     tooltip:SetOwner(owner, "ANCHOR_CURSOR")
                 end
