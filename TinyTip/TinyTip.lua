@@ -318,7 +318,7 @@ function module:TooltipFormat(unit, name, realm, isPlayer, isPlayerOrPet, isDead
     end
 end
 
-local Hook_OnTooltipSetUnit, IgnoreOnTooltipCleared, OnUpdateSet
+local Hook_OnTooltipSetUnit, IgnoreOnTooltipCleared, OnUpdateSet, Original_GameTooltip_OnTooltipCleared
 if not modulecore then
     local Original_GameTooltip_OnTooltipSetUnit = nil
     local function OnTooltipSetUnit(self,...)
@@ -344,7 +344,6 @@ if not modulecore then
         end
     end
 
-    local Original_GameTooltip_OnTooltipCleared = nil
     local function OnTooltipCleared(self,...)
         if Original_GameTooltip_OnTooltipCleared then
             Original_GameTooltip_OnTooltipCleared(self,...)
