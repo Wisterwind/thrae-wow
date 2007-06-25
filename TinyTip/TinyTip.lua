@@ -332,6 +332,7 @@ if not modulecore then
             module:TooltipFormat(unit)
             GameTooltip:Show()
             EventFrame.unit = unit
+            GameTooltip_ClearMoney()
         end
         IgnoreOnTooltipCleared = nil
     end
