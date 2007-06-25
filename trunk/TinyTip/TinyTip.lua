@@ -318,10 +318,11 @@ function module:TooltipFormat(unit, name, realm, isPlayer, isPlayerOrPet, isDead
     end
 end
 
-local Hook_OnTooltipSetUnit
+local Hook_OnTooltipSetUnit, IgnoreOnTooltipCleared, OnUpdateSet
 if not modulecore then
     local Original_GameTooltip_OnTooltipSetUnit = nil
     local function OnTooltipSetUnit(self,...)
+        IgnoreOnTooltipCleared = true
         if Original_Gametooltip_OnTooltipSetUnit then
             Original_GameTooltip_SetUnit(self,...)
         end
@@ -331,6 +332,7 @@ if not modulecore then
             module:TooltipFormat(unit)
             GameTooltip:Show()
         end
+        IgnoreOnTooltipCleared = nil
     end
 
     Hook_OnTooltipSetUnit = function(ignorethisarg, tooltip)
@@ -340,22 +342,32 @@ if not modulecore then
             tooltip:SetScript("OnTooltipSetUnit", OnTooltipSetUnit)
         end
     end
+
+    local Original_GameTooltip_OnTooltipCleared = nil
+    local function OnTooltipCleared(self,...)
+        if Original_GameTooltip_OnTooltipCleared then
+            Original_GameTooltip_OnTooltipCleared(self,...)
+        end
+        if OnUpdateSet and not IgnoreOnTooltipCleared then
+            EventFrame:SetScript("OnUpdate", nil)
+            OnUpdateSet = nil
+        end
+    end
 end
 
 --[[-------------------------------------------------------
 -- Anchoring and Positioning
 ---------------------------------------------------------]]
 
+local SetDefaultAnchor
+
 -- Used to stick GameTooltip to the cursor with offsets.
 local getcpos = _G.GetCursorPosition
+local IsMouseover
 local function Anchor_OnUpdate(self)
-        local unit
-        _, unit = GameTooltip:GetUnit()
-        if not unit or not UnitExists(unit) then
-            if db["Fade"] ~= 1 or GameTooltip:GetAlpha() < 0.1 then
-                self:SetScript("OnUpdate", nil)
-                return
-            end
+        if IsMouseover and not UnitExists("mouseover") and db["Fade"] ~= 1 and GameTooltip:GetAlpha() < 0.1 then
+            EventFrame:SetScript("OnUpdate", nil)
+            OnUpdateSet = nil
         end
         local x,y = getcpos()
         local uiscale,tscale = UIParent:GetScale(), GameTooltip:GetScale()
@@ -366,7 +378,7 @@ local function Anchor_OnUpdate(self)
 end
 
 local Original_GameTooltip_SetDefaultAnchor = nil
-local function SetDefaultAnchor(tooltip,owner,...)
+SetDefaultAnchor = function(tooltip,owner,...)
     if Original_GameTooltip_SetDefaultAnchor then
         Original_GameTooltip_SetDefaultAnchor(tooltip,owner,...)
     end
@@ -379,6 +391,7 @@ local function SetDefaultAnchor(tooltip,owner,...)
                     db["FCursorAnchor"] then
                         EventFrame.OffX,EventFrame.OffY,EventFrame.Anchor = db["FOffX"], db["FOffY"], db["FCursorAnchor"]
                         EventFrame:SetScript("OnUpdate", Anchor_OnUpdate)
+                        IsMouseover, OnUpdateSet = nil, true
                     else
                         tooltip:SetOwner(owner, "ANCHOR_CURSOR")
                     end
@@ -398,6 +411,7 @@ local function SetDefaultAnchor(tooltip,owner,...)
                 db["MCursorAnchor"] then
                     EventFrame.OffX,EventFrame.OffY,EventFrame.Anchor = db["MOffX"], db["MOffY"], db["MCursorAnchor"]
                     EventFrame:SetScript("OnUpdate", Anchor_OnUpdate)
+                    IsMouseover, OnUpdateSet = true
                 else
                     tooltip:SetOwner(owner, "ANCHOR_CURSOR")
                 end
@@ -448,9 +462,9 @@ function module:Initialize()
             -- TinyTip default, set it to nil.
             --[[
                 ["FormatDisabled"] = nil,    -- This will disable all formating is set to true.
-                ["BGColor"] = nil,             -- 1 will disable colouring the background. 3 will make it black,
+                ["BGColor"] = nil,           -- 1 will disable colouring the background. 3 will make it black,
                                              -- except for Tapped/Dead. 2 will colour NPCs as well as PCs.
-                ["Border"] = nil,              -- 1 will disable colouring the border. 2 will make it always black.
+                ["Border"] = nil,            -- 1 will disable colouring the border. 2 will make it always black.
                                              -- 3 will make it a similiar colour to the background for NPCs.
                 ["FAnchor"] = nil,           -- "BOTTOMRIGHT", "BOTTOMLEFT", "TOPRIGHT", "TOPLEFT", "CURSOR"
                                              -- Used only in Frames. TinyTip default is BOTTOMRIGHT.
@@ -468,6 +482,12 @@ function module:Initialize()
         }
 
     Hook_OnTooltipSetUnit(self, GameTooltip, TooltipFormat)
+
+    if not modulecore and Original_GameTooltip_OnTooltipCleared == nil then
+        Original_GameTooltip_OnTooltipCleared  = GameTooltip:GetScript("OnTooltipCleared")
+        if not Original_GameTooltip_OnTooltipCleared then Original_GameTooltip_OnTooltipCleared = false end
+        GameTooltip:SetScript("OnTooltipCleared", OnTooltipCleared)
+    end
 
     if Original_GameTooltip_SetDefaultAnchor == nil then
         Original_GameTooltip_SetDefaultAnchor = _G.GameTooltip_SetDefaultAnchor
