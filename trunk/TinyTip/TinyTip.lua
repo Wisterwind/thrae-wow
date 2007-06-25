@@ -365,10 +365,11 @@ local SetDefaultAnchor
 
 -- Used to stick GameTooltip to the cursor with offsets.
 local getcpos = _G.GetCursorPosition
-local IsMouseover
-local function Anchor_OnUpdate(self)
-        if self.unit and not UnitExists(self.unit) and GameTooltip:GetAlpha() < (db["Alpha"] or 0.9) then
-            GameTooltip:Hide()
+local function Anchor_OnUpdate(self, time)
+        if self.unit then
+            local unit
+            _, unit = GameTooltip:GetUnit()
+            if unit and not UnitExists(unit) then GameTooltip:Hide() end
         end
         local x,y = getcpos()
         local uiscale,tscale = UIParent:GetScale(), GameTooltip:GetScale()
@@ -412,7 +413,7 @@ SetDefaultAnchor = function(tooltip,owner,...)
                 db["MCursorAnchor"] then
                     EventFrame.OffX,EventFrame.OffY,EventFrame.Anchor = db["MOffX"], db["MOffY"], db["MCursorAnchor"]
                     EventFrame:SetScript("OnUpdate", Anchor_OnUpdate)
-                    OnUpdateSet
+                    OnUpdateSet = true
                 else
                     tooltip:SetOwner(owner, "ANCHOR_CURSOR")
                 end
