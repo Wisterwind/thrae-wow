@@ -318,13 +318,15 @@ function module:TooltipFormat(unit, name, realm, isPlayer, isPlayerOrPet, isDead
     end
 end
 
-local Hook_OnTooltipSetUnit, IgnoreOnTooltipCleared, OnUpdateSet, Original_GameTooltip_OnTooltipCleared
+local Hook_OnTooltipSetUnit, OnUpdateSet, IgnoreTooltipClearedHook, OnTooltipCleared
+local Original_GameTooltip_OnTooltipCleared = nil
 if not modulecore then
     local Original_GameTooltip_OnTooltipSetUnit = nil
+    local IgnoreTooltipClearedHook
     local function OnTooltipSetUnit(self,...)
-        IgnoreOnTooltipCleared = true
-        if Original_Gametooltip_OnTooltipSetUnit then
-            Original_GameTooltip_SetUnit(self,...)
+        IgnoreTooltipClearedHook = true
+        if Original_GameTooltip_OnTooltipSetUnit then
+            Original_GameTooltip_OnTooltipSetUnit(self,...)
         end
         if not db["FormatDisabled"] then
             local unit
@@ -332,9 +334,8 @@ if not modulecore then
             module:TooltipFormat(unit)
             GameTooltip:Show()
             EventFrame.unit = unit
-            GameTooltip_ClearMoney()
         end
-        IgnoreOnTooltipCleared = nil
+        IgnoreTooltipClearedHook = nil
     end
 
     Hook_OnTooltipSetUnit = function(ignorethisarg, tooltip)
@@ -344,17 +345,27 @@ if not modulecore then
             tooltip:SetScript("OnTooltipSetUnit", OnTooltipSetUnit)
         end
     end
-
-    local function OnTooltipCleared(self,...)
+    OnTooltipCleared = function(self,...)
         if Original_GameTooltip_OnTooltipCleared then
             Original_GameTooltip_OnTooltipCleared(self,...)
         end
-        if OnUpdateSet and not IgnoreOnTooltipCleared then
+        if OnUpdateSet and not IgnoreTooltipClearedHook then
             EventFrame:SetScript("OnUpdate", nil)
             OnUpdateSet = nil
             EventFrame.unit = nil
         end
     end
+    --[[
+    local function OnHide(self,...)
+        if Original_GameTooltip_OnHide then
+            if OnUpdateSet then
+                EventFrame:SetScript("OnUpdate", nil)
+                OnUpdateSet = nil
+                EventFrame.unit = nil
+            end
+        end
+    end
+    --]]
 end
 
 --[[-------------------------------------------------------
