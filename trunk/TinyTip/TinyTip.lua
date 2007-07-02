@@ -333,6 +333,7 @@ if not modulecore then
             _, unit = self:GetUnit()
             module:TooltipFormat(unit)
             GameTooltip:Show()
+            GameTooltipStatusBar:Show()
             EventFrame.unit = unit
         end
         IgnoreTooltipClearedHook = nil
