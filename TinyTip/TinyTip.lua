@@ -18,7 +18,8 @@ local _G = getfenv(0)
 -- Local References
 ----------------------------------------------]]
 local strformat, strfind = string.format, string.find
-local UIParent, GameTooltip, GameTooltipStatusBar = _G.UIParent, _G.GameTooltip, _G.GameTooltipStatusBar
+local UIParent, GameTooltip = _G.UIParent, _G.GameTooltip
+local GameTooltipTextLeft1, GameTooltipTextLeft2 = _G.GameTooltipTextLeft1, _G.GameTooltipTextLeft2
 
 local L = _G.TinyTipLocale
 
@@ -307,13 +308,11 @@ function module:TooltipFormat(unit, name, realm, isPlayer, isPlayerOrPet, isDead
     end
 end
 
-local Hook_OnTooltipSetUnit, OnUpdateSet, IgnoreTooltipClearedHook, OnTooltipCleared
-local Original_GameTooltip_OnTooltipCleared = nil
+local Hook_OnTooltipSetUnit, OnUpdateSet, OnHide
+local Original_GameTooltip_OnHide = nil,nil
 if not modulecore then
     local Original_GameTooltip_OnTooltipSetUnit = nil
-    local IgnoreTooltipClearedHook
     local function OnTooltipSetUnit(self,...)
-        IgnoreTooltipClearedHook = true
         if Original_GameTooltip_OnTooltipSetUnit then
             Original_GameTooltip_OnTooltipSetUnit(self,...)
         end
@@ -324,7 +323,6 @@ if not modulecore then
             GameTooltip:Show()
             EventFrame.unit = unit
         end
-        IgnoreTooltipClearedHook = nil
     end
 
     Hook_OnTooltipSetUnit = function(ignorethisarg, tooltip)
@@ -334,27 +332,16 @@ if not modulecore then
             tooltip:SetScript("OnTooltipSetUnit", OnTooltipSetUnit)
         end
     end
-    OnTooltipCleared = function(self,...)
-        if Original_GameTooltip_OnTooltipCleared then
-            Original_GameTooltip_OnTooltipCleared(self,...)
+    OnHide = function(self,...)
+        if Original_GameTooltip_OnHide then
+            Original_GameTooltip_OnHide(self,...)
         end
-        if OnUpdateSet and not IgnoreTooltipClearedHook then
+        if OnUpdateSet then
             EventFrame:SetScript("OnUpdate", nil)
             OnUpdateSet = nil
             EventFrame.unit = nil
         end
     end
-    --[[
-    local function OnHide(self,...)
-        if Original_GameTooltip_OnHide then
-            if OnUpdateSet then
-                EventFrame:SetScript("OnUpdate", nil)
-                OnUpdateSet = nil
-                EventFrame.unit = nil
-            end
-        end
-    end
-    --]]
 end
 
 --[[-------------------------------------------------------
@@ -369,7 +356,7 @@ local function Anchor_OnUpdate(self, time)
         if self.unit then
             local unit
             _, unit = GameTooltip:GetUnit()
-            if unit and not UnitExists(unit) then GameTooltip:Hide() end
+            if not unit or not UnitExists(unit) then GameTooltip:Hide() end
         end
         local x,y = getcpos()
         local uiscale,tscale = UIParent:GetScale(), GameTooltip:GetScale()
@@ -461,7 +448,7 @@ function module:Initialize()
         {
             -- The below options are commented out by default. To select the
             -- TinyTip default, set it to nil.
-            --[[
+            [[--
                 ["FormatDisabled"] = nil,    -- This will disable all formating is set to true.
                 ["BGColor"] = nil,           -- 1 will disable colouring the background. 3 will make it black,
                                              -- except for Tapped/Dead. 2 will colour NPCs as well as PCs.
@@ -484,10 +471,10 @@ function module:Initialize()
 
     Hook_OnTooltipSetUnit(self, GameTooltip, TooltipFormat)
 
-    if not modulecore and Original_GameTooltip_OnTooltipCleared == nil then
-        Original_GameTooltip_OnTooltipCleared  = GameTooltip:GetScript("OnTooltipCleared")
-        if not Original_GameTooltip_OnTooltipCleared then Original_GameTooltip_OnTooltipCleared = false end
-        GameTooltip:SetScript("OnTooltipCleared", OnTooltipCleared)
+    if not modulecore and Original_GameTooltip_OnHide == nil then
+        Original_GameTooltip_OnHide  = GameTooltip:GetScript("OnHide")
+        if not Original_GameTooltip_OnHide then Original_GameTooltip_OnHide = false end
+        GameTooltip:SetScript("OnHide", OnHide)
     end
 
     if Original_GameTooltip_SetDefaultAnchor == nil then
