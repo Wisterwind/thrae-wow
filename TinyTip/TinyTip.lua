@@ -18,7 +18,7 @@ local _G = getfenv(0)
 -- Local References
 ----------------------------------------------]]
 local strformat, strfind = string.format, string.find
-local UIParent, GameTooltip = _G.UIParent, _G.GameTooltip
+local UIParent, GameTooltip, GameTooltipStatusBar = _G.UIParent, _G.GameTooltip, _G.GameTooltipStatusBar
 
 local L = _G.TinyTipLocale
 
@@ -77,25 +77,28 @@ if not modulecore then
     end
 end
 
-local lines
 function module:TooltipFormat(unit, name, realm, isPlayer, isPlayerOrPet, isDead)
     if not UnitExists(unit) then return end
 
     local numLines = GameTooltip:NumLines()
     local guildName = GetGuildInfo(unit)
-    local line, levelLine, afterLevelLine
+    local line, lineText, levelLine, afterLevelLine, guildLine
+    local isPvP = UnitIsPVP(unit)
     for i = 1,numLines,1 do
         line = _G[ "GameTooltipTextLeft" .. i ]
         if line:IsShown() then
-            lines[i] = line:GetText()
-            line = lines[i]
-            if line and line ~= guildName and strfind(line, L.Level, 1, true) then
-                levelLine = true
+            lineText = line:GetText()
+            if lineText and lineText ~= guildName and strfind(lineText, L.Level, 1, true) then
+                levelLine = line
                 afterLevelLine = i + 1
+            elseif lineText == guildName then
+                guildLine = line
+            elseif isPvP and strfind(lineText, PVP_ENABLED, 1, true) then
+                line:SetText(nil)
+                if modulecore then GameTooltip:Show() end -- this removes nil'd lines
             end
         end
     end
-    GameTooltip:ClearLines()
 
     -- First Line
     if not isPlayer then isPlayer = UnitIsPlayer(unit) end
@@ -104,12 +107,12 @@ function module:TooltipFormat(unit, name, realm, isPlayer, isPlayerOrPet, isDead
     _, rankNumber = GetPVPRankInfo(UnitPVPRank(unit), unit)
     if isPlayer and rankNumber > 0 then
         -- RankNumber UnitName PlayerRealm
-        GameTooltip:AddLine( string.format(L.strformat_ranknumber .. " %s",
+        GameTooltipTextLeft1:SetText( string.format(L.strformat_ranknumber .. " %s",
                              rankNumber,
                              (name or L.UnknownEntity) .. ( (realm and
                              realm ~= PlayerRealm and (" (" .. realm .. ")") ) or "")))
     else -- UnitName PlayerRealm
-        GameTooltip:AddLine( (name or L.UnknownEntity) .. ( (realm and
+        GameTooltipTextLeft1:SetText( (name or L.UnknownEntity) .. ( (realm and
                              realm ~= PlayerRealm and (" (" .. realm .. ")") ) or ""))
     end
 
@@ -181,14 +184,21 @@ function module:TooltipFormat(unit, name, realm, isPlayer, isPlayerOrPet, isDead
         end
     end
 
+    -- Check for a dead unit, but try to leave out Hunter's Feign Death
+    if not isDead then
+        isDead = UnitHealth(unit) <= 0 and ( not isPlayer or UnitIsDeadOrGhost(unit) or UnitIsCorpse(unit) )
+    end
+    if isDead then
+        bdR,bdG,bdB = 0.54, 0.54, 0.54
+        GameTooltipTextLeft1:SetTextColor(0.54,0.54,0.54)
+        deadOrTappedColour = "888888"
+    end
+
     -- Set the color of the trade or guild line, if it's available. This
     -- line comes before the level line.
     if afterLevelLine and afterLevelLine > 3 then
-        line = lines[2]
-
-        if line then
-            GameTooltip:AddLine( "<" .. line.. ">" )
-            line = _G["GameTooltipTextLeft" .. GameTooltip:NumLines()]
+        if guildLine then
+            guildLine:SetText( "<" .. guildLine:GetText().. ">" )
             -- We like to know who our guild members are.
             if guildName and IsInGuild() and guildName == GetGuildInfo("player")
             and db["Friends"] ~= 2 then
@@ -199,25 +209,18 @@ function module:TooltipFormat(unit, name, realm, isPlayer, isPlayerOrPet, isDead
                     line:SetTextColor( GameTooltipTextLeft1:GetTextColor() )
                 else
             --]]
-                    line:SetTextColor( 0.58, 0.0, 0.83 )
+                    guildLine:SetTextColor( 0.58, 0.0, 0.83 )
             --    end
             else -- other guilds or NPC trade line
-                line:SetTextColor( GameTooltipTextLeft1:GetTextColor() )
+                guildLine:SetTextColor( GameTooltipTextLeft1:GetTextColor() )
             end
+        else
+            GameTooltipTextLeft2:SetText( "<" .. GameTooltipTextLeft2:GetText() .. ">" )
+            GameTooltipTextLeft2:SetTextColor( GameTooltipTextLeft1:GetTextColor() )
         end
         for i = 3, afterLevelLine - 2, 1 do -- add misc. lines before level line
-            GameTooltip:AddLine( lines[i], GameTooltipTextLeft1:GetTextColor() )
+            _G[ "GameTooltipTextLeft1" .. i]:SetTextColor( GameTooltipTextLeft1:GetTextColor() )
         end
-    end
-
-    -- Check for a dead unit, but try to leave out Hunter's Feign Death
-    if not isDead then
-        isDead = UnitHealth(unit) <= 0 and ( not isPlayer or UnitIsDeadOrGhost(unit) or UnitIsCorpse(unit) )
-    end
-    if isDead then
-        bdR,bdG,bdB = 0.54, 0.54, 0.54
-        GameTooltipTextLeft1:SetTextColor(0.54,0.54,0.54)
-        deadOrTappedColour = "888888"
     end
 
     -- The Level Line
@@ -285,22 +288,8 @@ function module:TooltipFormat(unit, name, realm, isPlayer, isPlayerOrPet, isDead
                              ( ( isDead and CORPSE ) or L.Tapped ) .. ")|r"
          end
 
-         GameTooltip:AddLine( levelLineText )
+         levelLine:SetText( levelLineText )
     end -- the Level Line
-
-    -- add missing lines
-    if afterLevelLine then
-        for i = afterLevelLine, numLines, 1 do
-            line = lines[i]
-            if not strfind(line, PVP_ENABLED, 1, true) then
-                if deadOrTappedColor then
-                    GameTooltip:AddLine( line, GameTooltipTextLeft1:GetTextColor() )
-                else
-                    GameTooltip:AddLine( line )
-                end
-            end
-        end
-    end
 
     if db["BGColor"] ~= 1 and (isPlayerOrPet or deadOrTappedColour or db["BGColor"] == 2) then
         if db["BGColor"] == 3 and not deadOrTappedColour then
@@ -333,7 +322,6 @@ if not modulecore then
             _, unit = self:GetUnit()
             module:TooltipFormat(unit)
             GameTooltip:Show()
-            GameTooltipStatusBar:Show()
             EventFrame.unit = unit
         end
         IgnoreTooltipClearedHook = nil
@@ -455,12 +443,11 @@ function module:ReInitialize()
                 ClassColours[k] = strformat("%2x%2x%2x", v.r*255, v.g*255, v.b*255)
             end
         end
-        if not lines then lines = {} end
     end
 end
 
 function module:Standby()
-    lines,ClassColours = nil,nil
+    ClassColours = nil
 end
 
 --[[
