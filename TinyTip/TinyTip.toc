@@ -26,4 +26,5 @@ localization\TinyTipLocale_koKR.lua
 localization\TinyTipLocale_zhTW.lua
 localization\TinyTipLocale_zhCN.lua
 
+StandAloneConfig.lua
 TinyTip.lua

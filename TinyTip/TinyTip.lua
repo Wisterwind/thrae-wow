@@ -8,8 +8,8 @@
 -- optimization assistance. Thanks to AF_Tooltip_Mini for the idea that
 -- became TinyTip.
 --
--- Note: See bottom of code for instructions on manually changing database
--- values (within the Initialize function).
+-- Note: If running TinyTip without TinyTipModuleCore, see
+-- StandAloneConfig.lua for manual configuration options.
 --]]
 
 local _G = getfenv(0)
@@ -316,12 +316,16 @@ if not modulecore then
         if Original_GameTooltip_OnTooltipSetUnit then
             Original_GameTooltip_OnTooltipSetUnit(self,...)
         end
-        if not db["FormatDisabled"] then
-            local unit
-            _, unit = self:GetUnit()
-            module:TooltipFormat(unit)
-            GameTooltip:Show()
-            EventFrame.unit = unit
+        if not self.TTHidden then
+            if not db["FormatDisabled"] then
+                local unit
+                _, unit = self:GetUnit()
+                module:TooltipFormat(unit)
+                GameTooltip:Show()
+                EventFrame.unit = unit
+            end
+        else
+            self:Hide()
         end
     end
 
@@ -373,8 +377,10 @@ SetDefaultAnchor = function(tooltip,owner,...)
     end
     if not module.onstandby and tooltip == GameTooltip then
         if OnUpdateSet then EventFrame:SetScript("OnUpdate", nil) end
+        tooltip.TTHidden = nil
         if owner ~= UIParent then
             if db["FAnchor"] or db["FOffX"] ~= nil or db["FOffY"] ~= nil then
+                if db["FAnchor"] == "HIDDEN" then tooltip.TTHidden = true return end
                 if db["FAnchor"] == "CURSOR" then
                     if (db["FOffX"] ~= nil and db["FOffX"] > 0) or (db["FOffY"] ~= nil and db["FOffY"] > 0) or
                     db["FCursorAnchor"] then
@@ -395,6 +401,7 @@ SetDefaultAnchor = function(tooltip,owner,...)
                 end
             end
         elseif db["MAnchor"] ~= "GAMEDEFAULT" or db["MOffX"] ~= nil or db["MOffY"] ~= nil then
+            if db["MAnchor"] == "HIDDEN" then tooltip.TTHidden = true return end
             if not db["MAnchor"] then
                 if (db["MOffX"] ~= nil and db["MOffX"] > 0) or (db["MOffY"] ~= nil and db["MOffY"] > 0) or
                 db["MCursorAnchor"] then
@@ -444,30 +451,7 @@ end
 
 -- For initializing the database and hooking functions.
 function module:Initialize()
-    db = db or
-        {
-            -- The below options are commented out by default. To select the
-            -- TinyTip default, set it to nil.
-            [[--
-                ["FormatDisabled"] = nil,    -- This will disable all formating is set to true.
-                ["BGColor"] = nil,           -- 1 will disable colouring the background. 3 will make it black,
-                                             -- except for Tapped/Dead. 2 will colour NPCs as well as PCs.
-                ["Border"] = nil,            -- 1 will disable colouring the border. 2 will make it always black.
-                                             -- 3 will make it a similiar colour to the background for NPCs.
-                ["FAnchor"] = nil,           -- "BOTTOMRIGHT", "BOTTOMLEFT", "TOPRIGHT", "TOPLEFT", "CURSOR"
-                                             -- Used only in Frames. TinyTip default is BOTTOMRIGHT.
-                ["FCursorAnchor"] = nil,     -- Which side of the cursor to anchor for frame units.
-                                             -- TinyTip's default is BOTTOM.
-                ["MAnchor"] = nil,           -- Used only for Mouseover units. Options same as above, with the
-                                             -- addition of "GAMEDEFAULT". TinyTip Default is CURSOR.
-                ["MCursorAnchor"] = nil,     -- Which side of the cursor to anchor for mouseover (world).
-                                             -- TinyTip's default is BOTTOM.
-                ["FOffX"] = nil,             -- X offset for Frame units (horizontal).
-                ["FOffY"] = nil,             -- Y offset for Frame units (vertical).
-                ["MOffX"] = nil,             -- Offset for Mouseover units (World Frame).
-                ["MOffY"] = nil              -- "     "       "       "       "
-            --]]
-        }
+    db = db or TinyTip_StandAloneDB
 
     Hook_OnTooltipSetUnit(self, GameTooltip, TooltipFormat)
 
