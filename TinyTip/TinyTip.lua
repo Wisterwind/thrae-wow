@@ -309,8 +309,13 @@ function module:TooltipFormat(unit, name, realm, isPlayer, isPlayerOrPet, isDead
 end
 
 local Hook_OnTooltipSetUnit, OnUpdateSet, OnHide
-local Original_GameTooltip_OnHide = nil,nil
+local Original_GameTooltip_OnHide = nil
 if not modulecore then
+    local Original_GameTooltip_OnShow = nil
+    local function OnShow(self,...)
+        if Original_GameTooltip_OnShow then Original_GameTooltip_OnShow(self,...) end
+        if self.TTHidden then self:Hide() self.TTHidden = nil end
+    end
     local Original_GameTooltip_OnTooltipSetUnit = nil
     local function OnTooltipSetUnit(self,...)
         if Original_GameTooltip_OnTooltipSetUnit then
@@ -324,11 +329,12 @@ if not modulecore then
                 GameTooltip:Show()
                 EventFrame.unit = unit
             end
-        else
-            self:Hide()
+        elseif Original_GameTooltip_OnShow == nil then
+            Original_GameTooltip_OnShow = GameTooltip:GetScript("OnShow")
+            if not Original_GameTooltip_OnShow then Original_GameTooltip_OnShow = false end
+            GameTooltip:SetScript("OnShow", OnShow)
         end
     end
-
     Hook_OnTooltipSetUnit = function(ignorethisarg, tooltip)
         if Original_GameTooltip_OnTooltipSetUnit == nil then
             Original_GameTooltip_OnTooltipSetUnit  = tooltip:GetScript("OnTooltipSetUnit")
