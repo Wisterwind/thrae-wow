@@ -17,7 +17,7 @@ PerfectTargets = DongleStub("Dongle-1.1"):New(AddonName)
 
 local function ValidTargetHostile(unitId)
     if not unitId or not UnitExists(unitId) or not UnitIsVisible(unitId)
-        or not UnitExists(unitId.."target") or UnitIsCivilian(unitId.."target")
+        or not UnitExists(unitId.."target")
         or UnitIsDead(unitId.."target") or UnitIsCorpse(unitId.."target")
         or not UnitCanAttack("player", unitId.."target")
         or not UnitIsVisible(unitId.."target") then return false end
