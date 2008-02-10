@@ -564,6 +564,10 @@ end
 function PerfectTargets:UNIT_TARGET(event,unit)
     if (unit ~= "player" and UnitIsUnit(unit,"player")) or unit == "target" or unit == "focus" or unit == "mouseover" then return end
 
+    if not targets then
+        targets, tanks, tankstrings = {},{},{}
+    end
+
     local tuid = unit.."target"
     if ValidTarget(unit) then
         local knowntarget
