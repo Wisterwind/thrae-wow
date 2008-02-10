@@ -220,7 +220,7 @@ function module:TooltipFormat(unit, name, realm, isPlayer, isPlayerOrPet, isDead
             GameTooltipTextLeft2:SetTextColor( GameTooltipTextLeft1:GetTextColor() )
         end
         for i = 3, afterLevelLine - 2, 1 do -- add misc. lines before level line
-            _G[ "GameTooltipTextLeft1" .. i]:SetTextColor( GameTooltipTextLeft1:GetTextColor() )
+            _G[ "GameTooltipTextLeft" .. i]:SetTextColor( GameTooltipTextLeft1:GetTextColor() )
         end
     end
 
