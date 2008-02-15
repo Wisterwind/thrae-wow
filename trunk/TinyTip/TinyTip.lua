@@ -57,8 +57,8 @@ if not modulecore then
 else
     _, module = GetAddOnInfo("TinyTip")
     module = modulecore:NewModule(module)
-    EventFrame = modulecore.OnUpdateFrame
-    db = modulecore.db
+    EventFrame = modulecore:GetOnUpdateFrame()
+    db = modulecore:GetDB()
     ColourPlayer = modulecore.ColourPlayer
     Hook_OnTooltipSetUnit = modulecore.Hook_OnTooltipSetUnit
 end
@@ -71,8 +71,7 @@ end
 -- for the class.
 if not modulecore then
     ColourPlayer = function(unit)
-        local c
-        _,c = UnitClass(unit)
+        local _,c = UnitClass(unit)
         if c and ClassColours[c] then return ClassColours[c] end
         return "FFFFFF"
     end
@@ -308,48 +307,31 @@ function module:TooltipFormat(unit, name, realm, isPlayer, isPlayerOrPet, isDead
     end
 end
 
-local Hook_OnTooltipSetUnit, OnUpdateSet, OnHide
-local Original_GameTooltip_OnHide = nil
+local Hook_OnTooltipSetUnit, OnHide, OnShow
 if not modulecore then
-    local Original_GameTooltip_OnShow = nil
-    local function OnShow(self,...)
-        if Original_GameTooltip_OnShow then Original_GameTooltip_OnShow(self,...) end
-        if self.TTHidden then self:Hide() self.TTHidden = nil end
+    function OnShow(self,...)
+         if self.TTHidden then GameTooltip:Hide() self.TTHidden = nil end
+    end
+    function OnHide(self,...)
+        if OnUpdateSet then self:SetScript("OnUpdate", nil) OnUpdateSet = nil end
     end
     local Original_GameTooltip_OnTooltipSetUnit = nil
     local function OnTooltipSetUnit(self,...)
         if Original_GameTooltip_OnTooltipSetUnit then
             Original_GameTooltip_OnTooltipSetUnit(self,...)
         end
-        if not self.TTHidden then
-            if not db["FormatDisabled"] then
-                local unit
-                _, unit = self:GetUnit()
-                module:TooltipFormat(unit)
-                GameTooltip:Show()
-                EventFrame.unit = unit
-            end
-        elseif Original_GameTooltip_OnShow == nil then
-            Original_GameTooltip_OnShow = GameTooltip:GetScript("OnShow")
-            if not Original_GameTooltip_OnShow then Original_GameTooltip_OnShow = false end
-            GameTooltip:SetScript("OnShow", OnShow)
+        if not module.TTHidden and not db["FormatDisabled"] then
+            local _, unit = self:GetUnit()
+            module:TooltipFormat(unit)
+            GameTooltip:Show()
+            EventFrame.unit = unit
         end
     end
-    Hook_OnTooltipSetUnit = function(ignorethisarg, tooltip)
+    Hook_OnTooltipSetUnit = function(_, tooltip)
         if Original_GameTooltip_OnTooltipSetUnit == nil then
             Original_GameTooltip_OnTooltipSetUnit  = tooltip:GetScript("OnTooltipSetUnit")
             if not Original_GameTooltip_OnTooltipSetUnit then Original_GameTooltip_OnTooltipSetUnit = false end
             tooltip:SetScript("OnTooltipSetUnit", OnTooltipSetUnit)
-        end
-    end
-    OnHide = function(self,...)
-        if Original_GameTooltip_OnHide then
-            Original_GameTooltip_OnHide(self,...)
-        end
-        if OnUpdateSet then
-            EventFrame:SetScript("OnUpdate", nil)
-            OnUpdateSet = nil
-            EventFrame.unit = nil
         end
     end
 end
@@ -363,17 +345,12 @@ local SetDefaultAnchor
 -- Used to stick GameTooltip to the cursor with offsets.
 local getcpos = _G.GetCursorPosition
 local function Anchor_OnUpdate(self, time)
-        if self.unit then
-            local unit
-            _, unit = GameTooltip:GetUnit()
-            if not unit or not UnitExists(unit) then GameTooltip:Hide() end
-        end
-        local x,y = getcpos()
-        local uiscale,tscale = UIParent:GetScale(), GameTooltip:GetScale()
-        GameTooltip:ClearAllPoints()
-        GameTooltip:SetPoint(self.Anchor or "BOTTOM", UIParent, "BOTTOMLEFT",
-                             (x + (self.OffX or 0)) / uiscale / tscale,
-                             (y + (self.OffY or 0)) / uiscale / tscale)
+            local x,y = getcpos()
+            local uiscale,tscale = UIParent:GetScale(), GameTooltip:GetScale()
+            GameTooltip:ClearAllPoints()
+            GameTooltip:SetPoint(self.Anchor or "BOTTOM", UIParent, "BOTTOMLEFT",
+                                (x + (self.OffX or 0)) / uiscale / tscale,
+                                (y + (self.OffY or 0)) / uiscale / tscale)
 end
 
 local Original_GameTooltip_SetDefaultAnchor = nil
@@ -383,10 +360,10 @@ SetDefaultAnchor = function(tooltip,owner,...)
     end
     if not module.onstandby and tooltip == GameTooltip then
         if OnUpdateSet then EventFrame:SetScript("OnUpdate", nil) end
-        tooltip.TTHidden = nil
+        EventFrame.TTHidden = nil
         if owner ~= UIParent then
             if db["FAnchor"] or db["FOffX"] ~= nil or db["FOffY"] ~= nil then
-                if db["FAnchor"] == "HIDDEN" then tooltip.TTHidden = true return end
+                if db["FAnchor"] == "HIDDEN" then EventFrame.TTHidden = true return end
                 if db["FAnchor"] == "CURSOR" then
                     if (db["FOffX"] ~= nil and db["FOffX"] > 0) or (db["FOffY"] ~= nil and db["FOffY"] > 0) or
                     db["FCursorAnchor"] then
@@ -407,7 +384,7 @@ SetDefaultAnchor = function(tooltip,owner,...)
                 end
             end
         elseif db["MAnchor"] ~= "GAMEDEFAULT" or db["MOffX"] ~= nil or db["MOffY"] ~= nil then
-            if db["MAnchor"] == "HIDDEN" then tooltip.TTHidden = true return end
+            if db["MAnchor"] == "HIDDEN" then EventFrame.TTHidden = true return end
             if not db["MAnchor"] then
                 if (db["MOffX"] ~= nil and db["MOffX"] > 0) or (db["MOffY"] ~= nil and db["MOffY"] > 0) or
                 db["MCursorAnchor"] then
@@ -448,6 +425,7 @@ end
 
 function module:Standby()
     ClassColours = nil
+    EventFrame.TTHidden = nil
 end
 
 --[[
@@ -460,12 +438,6 @@ function module:Initialize()
     db = db or TinyTip_StandAloneDB
 
     Hook_OnTooltipSetUnit(self, GameTooltip, TooltipFormat)
-
-    if not modulecore and Original_GameTooltip_OnHide == nil then
-        Original_GameTooltip_OnHide  = GameTooltip:GetScript("OnHide")
-        if not Original_GameTooltip_OnHide then Original_GameTooltip_OnHide = false end
-        GameTooltip:SetScript("OnHide", OnHide)
-    end
 
     if Original_GameTooltip_SetDefaultAnchor == nil then
         Original_GameTooltip_SetDefaultAnchor = _G.GameTooltip_SetDefaultAnchor
@@ -494,10 +466,13 @@ if not modulecore then
                 module:Enable()
         end
     end
-    EventFrame = CreateFrame("Frame", nil, UIParent)
+    EventFrame = CreateFrame("Frame", nil, GameTooltip)
     EventFrame:RegisterEvent("ADDON_LOADED")
     EventFrame:RegisterEvent("PLAYER_LOGIN")
     EventFrame:SetScript("OnEvent", OnEvent)
+    EventFrame:SetScript("OnShow", OnShow)
+    EventFrame:SetScript("OnHide", OnHide)
+    EventFrame:Show()
 end
 
 --[[
