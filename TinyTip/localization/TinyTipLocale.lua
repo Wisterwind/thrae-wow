@@ -19,7 +19,9 @@ local t = {
         ["Unknown"] = UNKNOWN,
         ["UnknownEntity"] = UKNOWNBEING,
         ["Rare Elite"] = string.format("%s %s", ITEM_QUALITY3_DESC, ELITE ),
-        ["strformat_ranknumber"] = "[R %d]"
+        ["strformat_ranknumber"] = "[R %d]",
+        ["slash2"] = "ttip",
+        ["nooptions"] = "TinyTipModules not found. StandAlone Configuration is only available. To edit StandAlone configuration, go to the TinyTip folder in your Addons folder and edit StandAloneConfig.lua."
 }
 
 -- support for TinyTipModuleCore

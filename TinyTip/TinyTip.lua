@@ -473,6 +473,13 @@ if not modulecore then
     EventFrame:SetScript("OnShow", OnShow)
     EventFrame:SetScript("OnHide", OnHide)
     EventFrame:Show()
+
+    local _,name = GetAddonInfo("TinyTip")
+    SlashCmdList["TinyTip"] = function(...)
+            DEFAULT_CHAT_FRAME:AddMessage(name .. ": " .. L["nooptions"])
+    end
+    SLASH_TINYTIP1 = '/' .. name:lower()
+    SLASH_TINYTIP2 = '/' .. L["slash2"]
 end
 
 --[[
