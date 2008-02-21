@@ -8,7 +8,7 @@
 -- optimization assistance. Thanks to AF_Tooltip_Mini for the idea that
 -- became TinyTip.
 --
--- Note: If running TinyTip without TinyTipModuleCore, see
+-- Note: If running TinyTip without TinyTipModules, see
 -- StandAloneConfig.lua for manual configuration options.
 --]]
 
@@ -20,6 +20,7 @@ local _G = getfenv(0)
 local strformat, strfind = string.format, string.find
 local UIParent, GameTooltip = _G.UIParent, _G.GameTooltip
 local GameTooltipTextLeft1, GameTooltipTextLeft2 = _G.GameTooltipTextLeft1, _G.GameTooltipTextLeft2
+local UnitName, UnitIsPlayer, GetPVPRankInfo, UnitPVPRank, UnitIsPVP, GetGuildInfo, UnitPlayerControlled, UnitReaction, UnitIsTapped, UnitIsTappedByPlayer, UnitCanAttack, GetNumFriends, GetFriendInfo, IsInGuild, UnitLevel, UnitFactionGroup, GetQuestGreenRange, UnitRace, UnitClass, UnitClassification, UnitCreatureFamily, UnitCreatureType = UnitName, UnitIsPlayer, GetPVPRankInfo, UnitPVPRank, UnitIsPVP, GetGuildInfo, UnitPlayerControlled, UnitReaction, UnitIsTapped, UnitIsTappedByPlayer, UnitCanAttack, GetNumFriends, GetFriendInfo, IsInGuild, UnitLevel, UnitFactionGroup, GetQuestGreenRange, UnitRace, UnitClass, UnitClassification, UnitCreatureFamily, UnitCreatureType
 
 local L = _G.TinyTipLocale
 
@@ -29,38 +30,21 @@ local L = _G.TinyTipLocale
 
 local _, PlayerRealm, ClassColours
 
---[[
-function TinyTip:LoDRun(addon,sfunc,...)
-	if not self[ sfunc ] then
-		local loaded, reason = LoadAddOn(addon)
-		if loaded then
-			self[ sfunc ](...)
-		else
-			self:Print( addon .. " Addon LoadOnDemand Error - " .. reason )
-			return reason
-		end
-	else
-		self[ sfunc ](...)
-	end
-end
---]]
-
 --[[----------------------------------------------------------------------
 -- Module Support
 ------------------------------------------------------------------------]]
 
--- _, TinyTip = GetAddOnInfo("TinyTip")
--- TinyTip = DongleStub("Dongle-1.0"):New(TinyTip)
-local module, EventFrame, db, ColourPlayer, Hook_OnTooltipSetUnit
+local modulecore = TinyTipModules
+
+local module, UpdateFrame, db, ColourPlayer, HookOnTooltipSetUnit
 if not modulecore then
     module = {}
 else
     _, module = GetAddOnInfo("TinyTip")
     module = modulecore:NewModule(module)
-    EventFrame = modulecore:GetOnUpdateFrame()
     db = modulecore:GetDB()
     ColourPlayer = modulecore.ColourPlayer
-    Hook_OnTooltipSetUnit = modulecore.Hook_OnTooltipSetUnit
+    HookOnTooltipSetUnit = modulecore.HookOnTooltipSetUnit
 end
 
 --[[----------------------------------------------------------------------
@@ -72,12 +56,12 @@ end
 if not modulecore then
     ColourPlayer = function(unit)
         local _,c = UnitClass(unit)
-        if c and ClassColours[c] then return ClassColours[c] end
-        return "FFFFFF"
+        return ( c and UnitIsPlayer(unit) and ClassColours[c]) or "FFFFFF"
     end
 end
 
-function module:TooltipFormat(unit, name, realm, isPlayer, isPlayerOrPet, isDead)
+function module.TooltipFormat(unit, name, realm, isPlayer, isPlayerOrPet, isDead)
+    local self = module
     if not UnitExists(unit) then return end
 
     local numLines = GameTooltip:NumLines()
@@ -258,12 +242,12 @@ function module:TooltipFormat(unit, name, realm, isPlayer, isPlayerOrPet, isDead
                 local npcType = UnitClassification(unit) -- Elite,etc. status
                 if npcType and npcType ~= "normal" then
                     if npcType == "elite" then
-                        levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "FFCC00") .. ELITE .. "|r"
+                        levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "FFCC00") .. L.Elite .. "|r"
                     elseif npcType == "worldboss" then
-                        levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "FF0000") .. BOSS .. "|r"
+                        levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "FF0000") .. L.Boss .. "|r"
                     elseif npcType == "rare" then
                         levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "FF66FF") ..
-                                                         ITEM_QUALITY3_DESC .. "|r"
+                                                         L.Rare .. "|r"
                     elseif npcType == "rareelite" then
                         levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "FFAAFF") ..
                                                             L["Rare Elite"] .. "|r"
@@ -285,7 +269,7 @@ function module:TooltipFormat(unit, name, realm, isPlayer, isPlayerOrPet, isDead
         -- add corpse/tapped line
          if deadOrTappedColour then
              levelLineText = levelLineText .. " |cFF" .. deadOrTappedColour .. "(" ..
-                             ( ( isDead and CORPSE ) or L.Tapped ) .. ")|r"
+                             ( ( isDead and L.Corpse ) or L.Tapped ) .. ")|r"
          end
 
          levelLine:SetText( levelLineText )
@@ -307,33 +291,36 @@ function module:TooltipFormat(unit, name, realm, isPlayer, isPlayerOrPet, isDead
     end
 end
 
-local Hook_OnTooltipSetUnit, OnHide, OnShow
+--[[-------------------------------------------------------
+-- Event Handlers
+---------------------------------------------------------]]
+
 if not modulecore then
-    function OnShow(self,...)
-         if self.TTHidden then GameTooltip:Hide() self.TTHidden = nil end
-    end
-    function OnHide(self,...)
-        if OnUpdateSet then self:SetScript("OnUpdate", nil) OnUpdateSet = nil end
-    end
-    local Original_GameTooltip_OnTooltipSetUnit = nil
+    local OriginalOnTooltipSetUnit = nil
     local function OnTooltipSetUnit(self,...)
-        if Original_GameTooltip_OnTooltipSetUnit then
-            Original_GameTooltip_OnTooltipSetUnit(self,...)
+        if OriginalOnTooltipSetUnit then
+            OriginalOnTooltipSetUnit(self,...)
         end
-        if not module.TTHidden and not db["FormatDisabled"] then
+        if not UpdateFrame.TTHidden and not db["FormatDisabled"] then
             local _, unit = self:GetUnit()
-            module:TooltipFormat(unit)
+            module.TooltipFormat(unit)
             GameTooltip:Show()
-            EventFrame.unit = unit
+            UpdateFrame.unit = unit
         end
     end
-    Hook_OnTooltipSetUnit = function(_, tooltip)
-        if Original_GameTooltip_OnTooltipSetUnit == nil then
-            Original_GameTooltip_OnTooltipSetUnit  = tooltip:GetScript("OnTooltipSetUnit")
-            if not Original_GameTooltip_OnTooltipSetUnit then Original_GameTooltip_OnTooltipSetUnit = false end
+    HookOnTooltipSetUnit = function(tooltip)
+        if OriginalOnTooltipSetUnit == nil then
+            OriginalOnTooltipSetUnit  = tooltip:GetScript("OnTooltipSetUnit") or false
             tooltip:SetScript("OnTooltipSetUnit", OnTooltipSetUnit)
         end
     end
+end
+
+function OnShow(self,...)
+    if self.TTHidden then GameTooltip:Hide() self.TTHidden = nil end
+end
+function OnHide(self,...)
+    if OnUpdateSet then self:SetScript("OnUpdate", nil) OnUpdateSet = nil end
 end
 
 --[[-------------------------------------------------------
@@ -344,7 +331,7 @@ local SetDefaultAnchor
 
 -- Used to stick GameTooltip to the cursor with offsets.
 local getcpos = _G.GetCursorPosition
-local function Anchor_OnUpdate(self, time)
+local function OnUpdate(self, time)
             local x,y = getcpos()
             local uiscale,tscale = UIParent:GetScale(), GameTooltip:GetScale()
             GameTooltip:ClearAllPoints()
@@ -359,16 +346,16 @@ SetDefaultAnchor = function(tooltip,owner,...)
         Original_GameTooltip_SetDefaultAnchor(tooltip,owner,...)
     end
     if not module.onstandby and tooltip == GameTooltip then
-        if OnUpdateSet then EventFrame:SetScript("OnUpdate", nil) end
-        EventFrame.TTHidden = nil
+        if OnUpdateSet then UpdateFrame:SetScript("OnUpdate", nil) end
+        UpdateFrame.TTHidden = nil
         if owner ~= UIParent then
             if db["FAnchor"] or db["FOffX"] ~= nil or db["FOffY"] ~= nil then
                 if db["FAnchor"] == "HIDDEN" then EventFrame.TTHidden = true return end
                 if db["FAnchor"] == "CURSOR" then
                     if (db["FOffX"] ~= nil and db["FOffX"] > 0) or (db["FOffY"] ~= nil and db["FOffY"] > 0) or
                     db["FCursorAnchor"] then
-                        EventFrame.OffX,EventFrame.OffY,EventFrame.Anchor = db["FOffX"], db["FOffY"], db["FCursorAnchor"]
-                        EventFrame:SetScript("OnUpdate", Anchor_OnUpdate)
+                        UpdateFrame.OffX,UpdateFrame.OffY,UpdateFrame.Anchor = db["FOffX"], db["FOffY"], db["FCursorAnchor"]
+                        UpdateFrame:SetScript("OnUpdate", OnUpdate)
                         OnUpdateSet = true
                     else
                         tooltip:SetOwner(owner, "ANCHOR_CURSOR")
@@ -388,8 +375,8 @@ SetDefaultAnchor = function(tooltip,owner,...)
             if not db["MAnchor"] then
                 if (db["MOffX"] ~= nil and db["MOffX"] > 0) or (db["MOffY"] ~= nil and db["MOffY"] > 0) or
                 db["MCursorAnchor"] then
-                    EventFrame.OffX,EventFrame.OffY,EventFrame.Anchor = db["MOffX"], db["MOffY"], db["MCursorAnchor"]
-                    EventFrame:SetScript("OnUpdate", Anchor_OnUpdate)
+                    UpdateFrame.OffX,UpdateFrame.OffY,UpdateFrame.Anchor = db["MOffX"], db["MOffY"], db["MCursorAnchor"]
+                    UpdateFrame:SetScript("OnUpdate", OnUpdate)
                     OnUpdateSet = true
                 else
                     tooltip:SetOwner(owner, "ANCHOR_CURSOR")
@@ -424,20 +411,15 @@ function module:ReInitialize()
 end
 
 function module:Standby()
-    ClassColours = nil
-    EventFrame.TTHidden = nil
+    if not modulecore then ClassColours = nil end
+    UpdateFrame.TTHidden = nil
 end
-
---[[
-function module:Wakeup()
-end
---]]
 
 -- For initializing the database and hooking functions.
 function module:Initialize()
-    db = db or TinyTip_StandAloneDB
+    db = db or TinyTip_StandAloneDB or {}
 
-    Hook_OnTooltipSetUnit(self, GameTooltip, TooltipFormat)
+    HookOnTooltipSetUnit(GameTooltip, self.TooltipFormat, true)
 
     if Original_GameTooltip_SetDefaultAnchor == nil then
         Original_GameTooltip_SetDefaultAnchor = _G.GameTooltip_SetDefaultAnchor
@@ -453,6 +435,7 @@ function module:Enable()
 end
 
 -- TinyTipModuleCore NOT loaded
+local EventFrame
 if not modulecore then
     local function OnEvent(self, event, arg1)
         if event == "ADDON_LOADED" and arg1 == "TinyTip" then
@@ -470,9 +453,7 @@ if not modulecore then
     EventFrame:RegisterEvent("ADDON_LOADED")
     EventFrame:RegisterEvent("PLAYER_LOGIN")
     EventFrame:SetScript("OnEvent", OnEvent)
-    EventFrame:SetScript("OnShow", OnShow)
-    EventFrame:SetScript("OnHide", OnHide)
-    EventFrame:Show()
+    UpdateFrame = EventFrame
 
     local _,name = GetAddOnInfo("TinyTip")
     SlashCmdList["TinyTip"] = function(...)
@@ -480,15 +461,12 @@ if not modulecore then
     end
     SLASH_TINYTIP1 = '/' .. name:lower()
     SLASH_TINYTIP2 = '/' .. L["slash2"]
+else
+    UpdateFrame = CreateFrame("Frame", nil, GameTooltip)
 end
 
---[[
-function TinyTip:Initialize()
-    if not _G.TinyTipDB then db = {} end
-end
+-- Update frame used for GameTooltip-related update and handler scripts
+UpdateFrame:SetScript("OnShow", OnShow)
+UpdateFrame:SetScript("OnHide", OnHide)
+UpdateFrame:Show()
 
-function TinyTip:Enable()
-    self:ReInitialize()
-    self.loaded = true
-end
---]]
