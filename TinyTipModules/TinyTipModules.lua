@@ -25,7 +25,7 @@ local classColours, hooks, origfuncs
 ------------------------------------------------------------------------]]
 
 local _, core = GetAddOnInfo("TinyTipModules")
-core = _G.DongleStub("Dongle-1.0"):New(core)
+core = _G.DongleStub("Dongle-1.0-RC3"):New(core)
 TinyTipModules = core
 
 --[[----------------------------------------------------------------------
