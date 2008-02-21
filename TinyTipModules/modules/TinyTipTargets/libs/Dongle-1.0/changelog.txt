@@ -1,0 +1,827 @@
+2007-04-06 [r291-293]  jnwhiteh:
+
+	* Dongle.lua: * Changed major version to Dongle-1.0-RC3
+
+	* Build.lua: * Remove DongleUtils.lua from the build process.
+
+	* DongleStub.lua: * Added a logging mechanism to DongleStub that
+	  allows us to debug library issues. * All registration/activation
+	  entries are logged in DongleStub.log.
+
+2007-04-06 [r289]  jnwhiteh:
+
+	* DongleStub.lua: * Change to major version of DongleStub to
+	  "DongleStub" * Added code to :IsNewVersion() to compensate for
+	  DongleStub versions with different major versions * This should
+	  prevent any errors from DongleStub-BetaX and DongleStub from
+	  occuring.
+
+2007-04-06 [r288]  jnwhiteh:
+
+	* Build.lua: * Updated build script to export DUT into the tagged
+	  directory
+
+2007-04-06 [r282-285]  jnwhiteh:
+
+	* DongleStub.lua, Dongle.lua: * Update of major versions to
+	  Dongle-1.0-RC2
+
+	* DongleUtils.lua: * Updated DongleUtils to not look for a specific
+	  version of DongleStub. That should not be necessary any more.
+
+2007-04-06 [r278-280]  jnwhiteh:
+
+	* DongleStub.lua, Dongle.lua, Dongle.toc: * Updated major version
+	  to Dongle-1.0-RC1
+
+	* Dongle.lua: * Fixed error reporting in Print/Debug/etc. *
+	  Resolved an issue with Debug() not passing arguments properly
+
+2007-04-06 [r277]  jnwhiteh:
+
+	* Dongle.lua: * Fixed an issue with print handlers due to an extra
+	  local I just added. * Removed header print from first line of
+	  slash command usage message
+
+2007-04-06 [r275]  jnwhiteh:
+
+	* Dongle.lua: * Actually implemented the logic for "Echo" and
+	  "EchoF"
+
+2007-04-06 [r274]  jnwhiteh:
+
+	* Dongle.lua: * Added DongleObject:Echo() and DongleObject:EchoF()
+	  which doesn't include the addon header to the message
+
+2007-04-03 [r266]  jnwhiteh:
+
+	* Dongle.lua: * DongleMessage does not require a Dongle object
+	  anymore, so non-Dongle objects can register for our custom
+	  messages.
+
+2007-03-21 [r264]  Tekkub:
+
+	* Dongle.lua: Applying patch, resolves #22
+
+2007-03-20 [r262]  jnwhiteh:
+
+	* Dongle.lua: * Changed database code to allow for ["*"]
+	  definitions in the defaults.
+
+2007-03-18 [r260]  jnwhiteh:
+
+	* Dongle.lua: * Added the code for /slash profile list, as a basic
+	  example of what we can do.
+
+2007-03-18 [r258]  jnwhiteh:
+
+	* Dongle.lua: * Initial coding of
+	  SlashCmdObject:InjectDBCommands().
+
+2007-03-18 [r257]  jnwhiteh:
+
+	* Dongle.lua: * Changed slash command system to use arrays, so the
+	  usage lines can be printed in the order they are registered. *
+	  Closes issues 16
+
+2007-03-18 [r255-256]  jnwhiteh:
+
+	* Dongle.lua: * Removed extra assert. * Closes issue 14
+
+	* Dongle.lua: * Ensure RegisterNamespace gets added to each DB
+	  object. * Fixed a number of bugs in RegisterNamespace, due to
+	  unit testing.
+
+2007-03-13 [r252]  jnwhiteh:
+
+	* Dongle.lua: * Addons can no longer register for PLAYER_LOGIN or
+	  PLAYER_LOGOUT. An error message is displayed if they attempt to
+	  register for these events.
+
+2007-03-01 [r250]  jnwhiteh:
+
+	* Build.lua, Dongle.lua, DongleUtils.lua: * Updated copyright
+	  notice in license * Added DongleObj:IsEventRegistered() * Added
+	  DongleObj:IsMessageRegistered() * Moved all error messages into a
+	  small localisation table * Moved DB local function declarations
+	  to the start of the DB section for declaration purpose * Altered
+	  the database to lazy evaluate all sections of the database. This
+	  means that any database section (.profile, .char, .faction) will
+	  not be initialized (including defaults) until accessed * Removed
+	  db.profileKey, you can access this value via db.char.profileKey
+	  and db.keys.profile * Added table db.keys which lists all section
+	  keys * Removed all local db .key references. * Altered slash
+	  command system to check cmd[handler] before it checks
+	  parent[handler] to allow definition of methods within the slash
+	  command table itself. * Added a message handler for
+	  DONGLE_PROFILE_CHANGED * Incremented major version to
+	  Dongle-Beta1 * Added preliminary support for namespaces, which
+	  needs to be fully converted and tested.
+	  DongleDBObject:RegisterNamespace(name[, defaults]) Args: * name
+	  (string) - An internal name for this namespace * defaults (table)
+	  - A table expressing defaults for this namespace Returns: * db
+	  (DongleDBObject) - The new database object. A namespace is a full
+	  fledged database with all rights and privileges, but has the
+	  following nuances: Behavior: * A namespace is created without a
+	  global variable, under the sv.namespaces[name] portion of the
+	  parent saved variable. This means you can have multiple modules
+	  that have full fledged database objects without needing more than
+	  one global variable. * When a parent database (namespaces are
+	  children) changes its profile (i.e. when DONGLE_PROFILE_CHANGED
+	  fires), each child will be automatically updated (they will fire
+	  their own DONGLE_PROFILE_CHANGED messages). * These namespace
+	  objects do not fire a true "sv_name" in the event, nore do they
+	  fire a Dongle object as the parent. Instead they will fire the
+	  "parent" database object, and the sv object as the sv_name. All
+	  namespace features are untagged, and the API may change, consider
+	  that feature extremely experimental.
+
+2007-01-31 [r249]  jnwhiteh:
+
+	* Dongle.lua: Fix to DongleStub to ensure the local Dongle is
+	  re-bound
+
+2007-01-20 [r248]  tekkub:
+
+	* Dongle.lua: Dongle - Changed Print/PrintF args and argchecks to
+	  match how clad had intended to do it, before he went crazy and
+	  did it all wrong like.
+
+2007-01-20 [r247]  tekkub:
+
+	* Dongle.lua: Committing in Clad's changes to Dongle, with some
+	  bugfixes. Unit tests still need to be done.
+
+2007-01-17 [r246]  tekkub:
+
+	* Dongle.lua: Dongle - Added IsDebugEnabled, returns the dongle's
+	  debug level, or nil if debug is disabled.
+
+2007-01-16 [r245]  evlogimenos:
+
+	* Dongle.lua: Streamline Activate()'s implementation a bit.
+
+2007-01-14 [r243]  evlogimenos:
+
+	* Dongle.lua: Update comment to match the code.
+
+2007-01-12 [r240]  tekkub:
+
+	* DongleUtils.lua: - Set "-Beta0" major versions on all the Utils
+	  libs - Converted metro to do delayed messages instead of events
+
+2007-01-11 [r239]  evlogimenos:
+
+	* Dongle.lua: Made some lookups in UnregisterEvent local (similar
+	  to UnregisterMessage).
+
+2007-01-11 [r237]  tekkub:
+
+	* DongleUtils.lua: Removed more unneeded code (file-scope locals
+	  don't need to be nilled out, GC will catch them correctly)
+
+2007-01-11 [r236]  tekkub:
+
+	* DongleUtils.lua: Removing some unneeded code from DongleUtils,
+	  probably more of this to come
+
+2007-01-11 [r235]  jnwhiteh:
+
+	* Dongle.lua: Made some lookups in UnregisterMessage local
+
+2007-01-11 [r232]  tekkub:
+
+	* DongleUtils.lua: Updating DongleUtils to use the new stub API
+
+2007-01-11 [r231]  evlogimenos:
+
+	* Dongle.lua: Simplify ModuleIterator function. Stop sorting the
+	  modules table since it is unnecessary.
+
+2007-01-11 [r229]  jnwhiteh:
+
+	* Dongle.toc: Updated toc file for 2.0.3
+
+2007-01-11 [r228]  jnwhiteh:
+
+	* Dongle.lua: Fixed issues with upgrading the library
+
+2007-01-11 [r227]  jnwhiteh:
+
+	* Dongle.lua, DongleUtils.lua: Update version messages in Dongle
+	  Updated DongleUtils to check for the proper version of DongleStub
+
+2007-01-11 [r224]  jnwhiteh:
+
+	* Dongle.lua: Made a few functions local, to help with privacy just
+	  a little bit
+
+2007-01-09 [r221]  jnwhiteh:
+
+	* DongleStub.lua: Updated DongleStub to latest version, with a
+	  major of DongleStub-Beta0, so we can check for its existance ***
+	  IMPORTANT *** Calls to DongleStub:Register(lib) should put the
+	  return back into lib, to rebind the local if necessary.
+	  DongleStub will ALWAYS return the old table, if it exists,
+	  cleaned and copied
+
+2007-01-08 [r219]  jnwhiteh:
+
+	* Dongle.lua: Added the message system in its first form, and
+	  converted all handlers/triggers over to it
+
+2007-01-08 [r218]  jnwhiteh:
+
+	* Build.lua: Do an svn update before building, to make sure we have
+	  the latest logs
+
+2007-01-08 [r217]  jnwhiteh:
+
+	* Build.lua: Altered build script to dump filenames with commit
+	  messages
+
+2007-01-08 [r214-215]  jnwhiteh:
+
+	* Dongle.lua: Changed major version number to Dongle-Beta0 Make the
+	  declaration of Dongle local
+
+	* Dongle.lua: Updated Activate/Deactivate functions for new
+	  DongleStub
+
+2007-01-08 [r212]  jnwhiteh:
+
+	* DongleStub.lua: Fixed a number of issues in DongleStub to resolve
+	  unit tests
+
+2007-01-08 [r209]  jnwhiteh:
+
+	* DongleStub.lua: Donglestub: Change deactivate and activate to
+	  arguments to register Altered the way the code is written to be
+	  more in line with Iriels' original stub If the activate function
+	  returns true, then the old instance will not be touched Upgrade
+	  order is Deactivate, Activate, nil/copy. Not sure if this is
+	  right.
+
+2007-01-07 [r207-208]  evlogimenos:
+
+	* Dongle.lua: Add slash command objects upgrade code.
+
+	* Dongle.lua: Add checks for slash command methods to make sure
+	  they are called on slash command objects.
+
+2007-01-07 [r205]  jnwhiteh:
+
+	* Dongle.lua: Removed AdminEvents, we will no longer have hidden
+	  special methods "CombatUnlock" and "CombatLockdown" Added a
+	  PLAYER_LOGOUT method to Dongle to handle database clears, and
+	  calling :Disable() Removed event registrations for PRE and PRD
+
+2007-01-04 [r201]  evlogimenos:
+
+	* Dongle.lua: Fix slash handler to not pass the an object as a
+	  first argument if the registered handler was passed a function
+	  and not a string.
+
+2007-01-03 [r198]  jnwhiteh:
+
+	* Dongle.lua: Initial commit of an event queue to handle cyclic
+	  events
+
+2007-01-02 [r196]  jnwhiteh:
+
+	* Build.lua, svn2log.py (added): * Added svn2log.py so we can build
+	  better changelogs. It will use python on your system if you have
+	  it, otherwise it will dump the standard changelog.
+
+2007-01-02 [r193-194]  jnwhiteh:
+
+	* Dongle.lua: * Fixed a typo in the bugfix.
+
+	* Build.lua, Dongle.lua: * Update to build script to check for
+	  leaked globals * Urgent bugfix to Dongle.lua which fixed sporadic
+	  event issues
+
+2007-01-01 [r188]  jnwhiteh:
+
+	* Dongle.lua: * Fire DONGLE_PROFILE_CHANGED on ResetDB() * Sequence
+	  is DATABASE_RESET, PROFILE_CREATED, and PROFILE_CHANGED.
+
+2007-01-01 [r187]  tardmrr:
+
+	* Dongle.lua: -DONGLE_PROFILE_CREATED will always fire after
+	  DONGLE_DATABASE_RESET.
+
+2007-01-01 [r186]  jnwhiteh:
+
+	* Dongle.lua: * Moved InitializeDB() work into local initdb()
+	  function. This is used for both InitailizeDB and the ResetDB
+	  functionality * Change DONGLE_PROFILE and DONGLE_DATABASE events
+	  to be consistent, they now fire the same arguments *
+	  DONGLE_PROFILE_CHANGED, dbObject, addonObject, svName, profileKey
+
+2007-01-01 [r185]  tardmrr:
+
+	* Dongle.lua: - Fixed event args to DONGLE_PROFILE_CREATED
+
+2007-01-01 [r184]  tardmrr:
+
+	* Dongle.lua: - Added DONGLE_PROFILE_CREATED - Changed TriggerEvent
+	  calls to call directly from Dongle instead of from the active
+	  object (or the active object's parent)
+
+2007-01-01 [r183]  jnwhiteh:
+
+	* Dongle.lua: * Changed copyDefaults to test for nil, rather than
+	  "not dest[k]"
+
+2006-12-31 [r177-180]  jnwhiteh:
+
+	* UnitTests.lua (removed), DongleStubUnitTests.lua (removed): *
+	  Removed old files from unit testing
+
+	* Dongle.lua: * Updated Dongle.lua to use the new versioning
+	  string. * Reworked the IterateModules() function to return
+	  name,module
+
+	* DongleUtils.lua: * Updated DongleUitls.lua to use the correct
+	  minor version string
+
+	* Build.lua: * Updated build script to properly handle the new
+	  DongleStub license
+
+2006-12-30 [r173]  jnwhiteh:
+
+	* DongleStub.lua: * Updated DongleStub with a unrestricted license,
+	  for public use. * Added svn keyword revisioning to the DongleStub
+	  system
+
+2006-12-29 [r169]  evlogimenos:
+
+	* Dongle.lua: Fix usage string generation to give out all the
+	  possible slash command prefixes for each command.
+
+2006-12-28 [r164]  jnwhiteh:
+
+	* Dongle.lua: * Removed the frame argument from
+	  Dongle:ADDON_LOADED(). Should now properly pass the addon name as
+	  arg1.
+
+2006-12-27 [r156]  evlogimenos:
+
+	* Dongle.lua: Add PrintUsage() API that prints out usage
+	  information for slash commands.
+
+2006-12-23 [r155]  jnwhiteh:
+
+	* Dongle.lua: Dongle: * Update to InitializeSlashCommand() check
+	  call argcheck with the appropriate arguments
+
+2006-12-23 [r153]  jnwhiteh:
+
+	* Dongle.lua: Dongle: * Fixed an invalid argcheck in
+	  InitializeSlashCommand * Used getfenv(0) instead of _G for
+	  clarity * Fixed an error with the slash command registration
+
+2006-12-23 [r152]  evlogimenos:
+
+	* Dongle.lua: Add slash command object that handler slash command
+	  registration and primitive parsing.
+
+2006-12-22 [r147]  tekkub:
+
+	* DongleUtils.lua: DongleUtils - minor version failsafe fix (it
+	  wasn't failing safely)
+
+2006-12-22 [r146]  tekkub:
+
+	* Dongle.lua: Dongle - Debugs should print if they are <= the
+	  current level, not >=
+
+2006-12-21 [r145]  tekkub:
+
+	* DongleUtils.lua: DongleUtils - Fixed tooltip owner stuff
+
+2006-12-18 [r138-139]  tekkub:
+
+	* DongleUtils.lua: DongleUtils - Fixed up alkis's changes... please
+	  test stuff before you commit :P
+
+	* DongleUtils.lua: DongleUtils - Too many ends
+
+2006-12-17 [r132]  evlogimenos:
+
+	* DongleUtils.lua: Split up RGBToHex into two functions: RGBToHex
+	  and RGPToHexPerc. This makes it symmetric with HexToRBG and
+	  HexToRGBPerc and it is more readable too :-)
+
+2006-12-15 [r95]  jnwhiteh:
+
+	* DongleStub.lua: DongleStub: Fixed a typo in type checking
+
+2006-12-15 [r92]  tekkub:
+
+	* Dongle.lua: Dongle - Fixed crap found in unit testing
+
+2006-12-15 [r90]  tekkub:
+
+	* Dongle.lua: Dongle - :HasModule should no longer give false
+	  posatives for other dongles that are not actually a module of the
+	  dongle in question - :HasModule can now accept a module object
+	  instead of name
+
+2006-12-15 [r89]  tekkub:
+
+	* Dongle.lua: Dongle - :Print and :Debug now seperate with ", " -
+	  fixed the nil-safe terminating at the first nil arg
+
+2006-12-15 [r88]  tekkub:
+
+	* Dongle.lua: Dongle - Added PrintF and DebugF - Reworked Print and
+	  Debug to call string.join if more than one arg is passed, will
+	  nil-safe (tostring) the args before passed to string.join to
+	  avoid errors
+
+2006-12-15 [r86]  tekkub:
+
+	* Dongle.lua: Dongle - :New and :NewModule now take (name[, obj])
+	  instead of ([obj, ]name)
+
+2006-12-15 [r85]  jnwhiteh:
+
+	* Dongle.lua: Dongle: * Fixed a typo in event triggering
+
+2006-12-14 [r84]  tardmrr:
+
+	* Dongle.lua: Fixed a bug where copy profile wouldn't work properly
+	  beyond the upper level.
+
+2006-12-14 [r83]  tardmrr:
+
+	* Dongle.lua: Fixed a bug that caused copyDefaults to overwrite any
+	  settings that weren't the default.
+
+2006-12-14 [r82]  tardmrr:
+
+	* Dongle.lua: Removed a leftover assert in DB:GetProfiles().
+
+2006-12-14 [r81]  jnwhiteh:
+
+	* Dongle.lua: Dongle: * Moved all database code into seperate
+	  objects, so a single addon can have multiple Dongle databases. *
+	  As a result, all database relevant methods should be called on
+	  the db object itself, instead of the Dongle. *
+	  DongleInitializeDB() and db:Reset() both take a default
+	  profilekey as their last argument
+
+2006-12-13 [r79]  tardmrr:
+
+	* Dongle.lua: - Added GetProfileKey and GetProfiles - InitializeDB
+	  and ResetDB now take defaultProfile arguments.
+
+2006-12-12 [r78]  evlogimenos:
+
+	* Dongle.lua: When unregistering all events from a Dongle, make
+	  sure we unregister the events from the frame as well, if this is
+	  the only Dongle responding to them.
+
+2006-12-10 [r77]  tekkub:
+
+	* DongleUtils.lua: DongleUtils - ColorGradient will handle perc ==
+	  1.0 correctly now - Added GetHPSeverity(perc, class). If class is
+	  passed returns ColorGradient(perc, red, yellow, class color),
+	  else returns ColorGradient(perc, red, yellow, green)
+
+2006-12-10 [r76]  jnwhiteh:
+
+	* Dongle.lua: Dongle: Working copy of the slash command handler
+
+2006-12-09 [r75]  tekkub:
+
+	* DongleUtils.lua: DongleUtils - Added RGB/Hex conversion functions
+	  and Color gradient function
+
+2006-12-06 [r73]  jnwhiteh:
+
+	* DongleStub.lua: * Changed DongleStub to throw an error from the
+	  addon that called DongleStub("SomeLibrary") if that library
+	  doesn't exist
+
+2006-12-06 [r70-71]  jnwhiteh:
+
+	* DongleStub.lua: * Fixed a syntax error in DongleStub
+
+	* DongleStub.lua, Dongle.lua: * Added some type checking to the
+	  DongleStub * Fixed an issue with safecall()
+
+2006-12-04 [r67]  jnwhiteh:
+
+	* Dongle.lua: Dongle: Updated based on unit testing
+
+2006-12-04 [r64]  jnwhiteh:
+
+	* Dongle.lua: Dongle: Changed argcheck(), should throw correct
+	  errors now
+
+2006-12-04 [r63]  evlogimenos:
+
+	* Dongle.lua: Fix printHelp to pring the right method name (Print
+	  or Debug) when a formatting error occurs
+
+2006-12-04 [r62]  jnwhiteh:
+
+	* Dongle.lua: Dongle: Added safecall() and use safecall() in non
+	  OnEvent dispatch
+
+2006-12-04 [r58]  jnwhiteh:
+
+	* Dongle.lua: Dongle: added an existance check to removeDefaults()
+	  to cover when creating a new profile, after deleting a profile.
+
+2006-12-04 [r57]  jnwhiteh:
+
+	* Dongle.lua: Dongle: * Changed FireEvent to TriggerEvent *
+	  Seperated FireEvent and OnEvent functionality, to simplify things
+
+2006-12-03 [r56]  jnwhiteh:
+
+	* Dongle.lua: Dongle: * Fixed an issue with default variable
+	  removal, should work correctly now without errors.
+
+2006-12-03 [r55]  jnwhiteh:
+
+	* Build.lua: Dongle: Update to the build script to provide a bit
+	  more feedback
+
+2006-12-03 [r53]  jnwhiteh:
+
+	* Build.lua: Dongle: Build script now adds a changelog to the
+	  tagged release.
+
+2006-12-03 [r50-52]  jnwhiteh:
+
+	* Dongle.lua: Dongle: Removed the global set for Dongle, and
+	  cleaned up the compat code which isn't necessary
+
+	* Build.lua: Dongle: * Build script now copies Dongle.lua,
+	  DongleUtils.lua and Dongle.toc when building * Should be
+	  relatively straightforward
+
+	* DongleUtils.lua: Dongle: * Changed eol-style to native on
+	  DongleUtils.lua
+
+2006-12-03 [r49]  jnwhiteh:
+
+	* Build.lua (added), DongleStub.lua, Dongle.lua, DongleUtils.lua:
+	  Dongle: * Changed license, removed the header portion of it. *
+	  Added Build.lua, which will build Dongle.lua for tag and release.
+	  This should be expanded for other libraries as well
+
+2006-12-03 [r48]  jnwhiteh:
+
+	* Dongle.lua: Dongle: Remove any default tables that are empty
+
+2006-12-03 [r47]  tekkub:
+
+	* Dongle.lua: Dongle - Fixing "call from a registered dongle"
+	  errors with :Print
+
+2006-12-02 [r46]  tekkub:
+
+	* DongleUtils.lua: DongleUtils - Somehow I undid some of my earlier
+	  changes... I think I've got too many local copies here....
+
+2006-12-02 [r45]  tekkub:
+
+	* DongleUtils.lua, Dongle.toc: DongleUtils - Added
+	  MetrognomeNano... does the old onupdate stuff and can fire a
+	  one-time event into Dongle. Don't try to make repeating events,
+	  use a time if you need something to fire more than once!
+
+2006-12-02 [r44]  tekkub:
+
+	* DongleUtils.lua: DongleUtils - Updated SetMantAttributes to
+	  clad's sexy version (I forgot we have select() now)
+
+2006-12-02 [r43]  jnwhiteh:
+
+	* Dongle.lua: Dongle: * Changed profile functions to print messages
+	  on major profile operations * Fixed ResetProfile() along with
+	  many other profile function
+
+2006-12-02 [r42]  jnwhiteh:
+
+	* Dongle.lua: Dongle: Fixed a typo
+
+2006-12-02 [r41]  jnwhiteh:
+
+	* Dongle.lua: Dongle: Quick fix for Indie's issue
+
+2006-12-02 [r40]  jnwhiteh:
+
+	* Dongle.lua: Dongle: Misc fixes. Loads Clique now.
+
+2006-12-02 [r39]  jnwhiteh:
+
+	* Dongle.lua: Dongle: Rewrite of some of the core functionality.
+	  Needs signifigant testing and expansion, which I should be able
+	  to get to tomorrow.
+
+2006-12-02 [r38]  tekkub:
+
+	* DongleUtils.lua: DongleUtils - Bugfix
+
+2006-12-01 [r37]  tekkub:
+
+	* DongleUtils.lua: DongleUtils - There Clad, now stop your whinin
+
+2006-12-01 [r36]  tekkub:
+
+	* DongleUtils.lua (added): DongleUtils - Initial import. This is a
+	  drycoded conglomeration of a few functions and my totally redone
+	  (and tiny) Gratuity. I'm not adding it into the TOC until I've
+	  had time to get in-game and test it out. Expect more handy
+	  functions to be added!
+
+2006-11-30 [r35]  jnwhiteh:
+
+	* Dongle.lua: Dongle: Fixed typo
+
+2006-11-29 [r34]  jnwhiteh:
+
+	* UnitTests.lua, DongleStub.lua, DongleStubUnitTests.lua: Dongle: *
+	  Change UnitTest system to properly set the environment * Any
+	  global variables that get set during a test are listed at the
+	  conclusion of the test.
+
+2006-11-29 [r33]  jnwhiteh:
+
+	* Dongle.lua: Dongle: Cleaned up some tabs/spaces and used
+	  IsNewVersion() for DongleStub
+
+2006-11-29 [r32]  evlogimenos:
+
+	* DongleStub.lua: = Rename DongleStub:NewVersion to
+	  DongleStun:IsNewVersion = Reuse DongleStub:IsNewVersion inside
+	  DongleStub:Register
+
+2006-11-29 [r31]  jnwhiteh:
+
+	* UnitTests.lua, DongleStubUnitTests.lua: Dongle: * Changed
+	  module() and require() to use "UnitTests" * Added an environment
+	  check, to ensure nothign gets added to the global env
+
+2006-11-28 [r29-30]  jnwhiteh:
+
+	* UnitTests.lua (added), DongleStub.lua, DongleStubUnitTests.lua
+	  (added): Dongle: Updated DongleStub based on unit testing * Added
+	  UnitTests.lua and DongleStubUnitTests.lua for unit testing
+	  purposes
+
+	* DongleStub.lua, Dongle.lua, Dongle.toc: Dongle: Change eol-style
+
+2006-11-27 [r28]  tekkub:
+
+	* Dongle.lua: Dongle - Changed minor version to use string.find
+	  cause Clad's a picky bitch. Also added failsafe minor version
+	  number 1 in case some genius doesn't checkout with an SVN client
+
+2006-11-27 [r27]  tekkub:
+
+	* Dongle.lua: Dongle - Now uses svn:keyword Rev for the minor
+	  version number - Dongle:OnEvent is now FireEvent. It can be used
+	  to create "custom" events from addons,
+	  MyAddon:FireEvent("MyAddon_SomeCustomEvent", "Blah")
+
+2006-11-26 [r26]  tekkub:
+
+	* Dongle.lua: Dongle - lern2local
+
+2006-11-26 [r25]  tekkub:
+
+	* Dongle.lua: Dongle - Tweaked reload slash command a tad
+
+2006-11-25 [r24]  jnwhiteh:
+
+	* Dongle.lua: Dongle: Fixed event registration, Enable/Init should
+	  now work properly
+
+2006-11-20 [r23]  jnwhiteh:
+
+	* Dongle.lua: Dongle: * Added UnregisterAllEvents() * Moved
+	  DongleStub registration code to the bottom of the file, for
+	  consistency * Changed logic in method replacement, replacement is
+	  now destructive * Changed event dispatch to be a simple
+	  iteration, pulled the extra logic out to other functions *
+	  Dongle:ADDON_LOADED() now handles event dispatch *
+	  Dongle:AdminEvents() handles the PLAYER_LOGIN/LOGOUT/etc. events
+	  * Added faction determination using UnitRace() when
+	  UnitFactionGroup() isn't available * We now register for our
+	  events using the Dongle system itself. * Call
+	  self:UnregisterAllEvents() when we deactivate an instance of
+	  Dongle
+
+2006-11-19 [r22]  jnwhiteh:
+
+	* Dongle.lua: Dongle: * Some event handling fixes, event dispatch
+	  should work now, but needs to be cleaned up.
+
+2006-11-19 [r21]  jnwhiteh:
+
+	* Dongle.lua: Dongle: * Changed initialization system so it queues
+	  all unloaded dongles, and initializes then on the next
+	  ADDON_LOADED. This means load on demand addons should work just
+	  fine, but anything created after PLAYER_LOGIN (i.e. in TinyPad)
+	  won't fire until the next ADDON_LOADED. In short, don't do it, or
+	  handle it yourself.
+
+2006-11-19 [r20]  jnwhiteh:
+
+	* Dongle.lua: Dongle: * Removed all queued DB code. I'm not sure
+	  what I was smoking when I wrote it.
+
+2006-11-19 [r19]  jnwhiteh:
+
+	* Dongle.lua: Dongle: Changed :New() to proper usage string,
+	  optionally taking in a pre-existing object, and returning the
+	  addon object at the end.
+
+2006-11-19 [r18]  jnwhiteh:
+
+	* Dongle.lua: Dongle: Completed fix for custom event registration
+
+2006-11-17 [r17]  jnwhiteh:
+
+	* Dongle.lua: Dongle: Fixed an issue with Dongle:Debug(), it wasn't
+	  pulling the debugLevel properly
+
+2006-11-17 [r16]  jnwhiteh:
+
+	* Dongle.lua: Dongle: Fixed event calling (thanks Tem)
+
+2006-11-17 [r15]  jnwhiteh:
+
+	* Dongle.lua: Dongle: * Set the profilekey in db.char[char] when we
+	  init the database * Added a db.profiles which lets developers
+	  iterate ALL profiles
+
+2006-11-17 [r14]  jnwhiteh:
+
+	* Dongle.lua: Dongle: Fix to :ResetDB() so it actually works now.
+
+2006-11-16 [r13]  jnwhiteh:
+
+	* Dongle.lua: Dongle: * Added code to :Activate() that puts Dongle
+	  in the list of valid modules, so it can Print and Debug from
+	  itself. * Added :Deactivate() that removes the registry[obj] =
+	  major entry * Fixed :Print() so it properly does a
+	  string.format() when necessary * Added a /dongle {enable|disable}
+	  AddonName which disables and enables addons from the commandline
+	  * Added a /reload which reloads the UI.
+
+2006-11-16 [r12]  jnwhiteh:
+
+	* DongleStub.lua, Dongle.lua, Dongle.toc: Dongle: Added DongleStub
+	  to the .toc, fixed license statement and added global
+	  registration
+
+2006-11-16 [r11]  jnwhiteh:
+
+	* DongleStub.lua: DongleStub: Tabify ftw!
+
+2006-11-16 [r9-10]  jnwhiteh:
+
+	* Dongle.lua: Dongle: Initial conversion to use DongleStub
+
+	* DongleStub.lua (added): DongleStub: Initial commit
+
+2006-11-16 [r8]  jnwhiteh:
+
+	* Dongle.lua: Dongle: * Fixed PLAYER_REGEN_{DISABLED/ENABLED} *
+	  Fixed OnEvents to use local arguments
+
+2006-11-14 [r7]  jnwhiteh:
+
+	* Dongle.lua: Dongle: Added Dongle:New() which had been deleted
+
+2006-11-14 [r6]  jnwhiteh:
+
+	* Dongle.toc (added): Dongle: Added Dongle.toc so this can load as
+	  an addon
+
+2006-11-14 [r5]  jnwhiteh:
+
+	* Dongle.lua: Dongle: Removed all stub code.. I hate it.
+
+2006-11-14 [r4]  jnwhiteh:
+
+	* Dongle.lua: Dongle: Added New-BSD license.
+
+2006-11-14 [r3]  jnwhiteh:
+
+	* Dongle.lua: Dongle: Added db.global (which just points to
+	  sv.global)
+
+2006-11-14 [r2]  jnwhiteh:
+
+	* Dongle.lua (added): Dongle: Initial import
+
