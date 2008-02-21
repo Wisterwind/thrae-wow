@@ -29,7 +29,7 @@
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ---------------------------------------------------------------------------]]
 local major = "DongleStub"
-local minor = tonumber(string.match("$Revision: 113 $", "(%d+)") or 1)
+local minor = tonumber(string.match("$Revision: 291 $", "(%d+)") or 1)
 
 local g = getfenv(0)
 
@@ -154,7 +154,7 @@ end
 ---------------------------------------------------------------------------]]
 
 local major = "Dongle-1.0-RC3"
-local minor = tonumber(string.match("$Revision: 113 $", "(%d+)") or 1)
+local minor = tonumber(string.match("$Revision: 293 $", "(%d+)") or 1)
 
 assert(DongleStub, string.format("Dongle requires DongleStub.", major))
 
