@@ -10,7 +10,7 @@
 ##
 ## X-Website: http://code.google.com/p/thrae-wow/
 ## X-Email: generalmx@gmail.com
-## X-Category: User Interface Enhancements
+## X-Category: Interface Enhancements
 ##
 
 localization\TinyTipLocale.lua
