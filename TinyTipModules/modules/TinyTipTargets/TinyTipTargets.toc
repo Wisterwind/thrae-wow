@@ -5,7 +5,7 @@
 ##
 ## Notes: Adds target information to your tooltip. It's what Thrae wants in his tooltip.
 ##
-## LoadManager: TinyTipModules
+## LoadManagers: TinyTipModules
 ## X-TinyTipModule-Always: 1
 ##
 ## X-Website: http://code.google.com/p/thrae-wow/
