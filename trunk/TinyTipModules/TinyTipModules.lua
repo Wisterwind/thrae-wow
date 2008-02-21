@@ -13,7 +13,9 @@ local _G = getfenv(0)
 --[[---------------------------------------------
 -- Local References
 ----------------------------------------------]]
+local strformat = string.format
 local UIParent, GameTooltip = _G.UIParent, _G.GameTooltip
+local UnitClass, UnitIsPlayer = UnitClass, UnitIsPlayer
 
 local L = _G.TinyTipLocale
 local classColours, hooks, origfuncs
@@ -23,30 +25,31 @@ local classColours, hooks, origfuncs
 ------------------------------------------------------------------------]]
 
 local _, core = GetAddOnInfo("TinyTipModules")
-core = DongleStub("Dongle-1.0"):New(core)
+core = _G.DongleStub("Dongle-1.0"):New(core)
 TinyTipModules = core
 
 --[[----------------------------------------------------------------------
 -- Local Functions
 ------------------------------------------------------------------------]]
 
-local function handlerOnTooltipSetUnit(tooltip,origfunc,handlers,...)
+local function handlerOnTooltipSetUnit(origfunc,handlers,self,...)
     if not handlers then
         if origfunc then
-            return origfunc(...)
+            return origfunc(self,...)
         end
     else
-        origfunc(...)
+        origfunc(self,...)
     end
 
+    local _, unit = self:GetUnit()
     for i = 1,#handlers do
-        handlers[i](...)
+        handlers[i](unit)
     end
 
-    tooltip:Show()
+    self:Show()
 end
 
-local function handler(object,origfunc,handlers,...)
+local function handler(origfunc,handlers,...)
     if not handlers then
         if origfunc then
             return origfunc(...)
@@ -61,6 +64,7 @@ local function handler(object,origfunc,handlers,...)
 end
 
 local function isHooked(handlers, handler)
+    if not handlers then return true end
     for _,v in ipairs(handlers) do
         if v == handler then
             return true
@@ -75,18 +79,20 @@ local function hook(object, func, mainhandler, handler, isscript, insert)
     if not hooks[object] then hooks[object] = { [func] = {} } end
 
     if not isHooked(hooks[object][func], handler) then
-        table.insert(hooks[object][func], handler, (insert and 1) or nil)
+        if insert then
+            table.insert(hooks[object][func], 1, handler)
+        else
+            table.insert(hooks[object][func], handler)
+        end
     end
 
-    if isscript then
-        if origfuncs[object][func] == nil then
-            if isscript then
-                origfuncs[object][func] = object:GetScript(func) or false
-                object:SetScript(func, function(...) mainhandler(object, origfuncs[object], hooks[object][func], ...) end)
-            else
-                origfuncs[object][func] = object[func] or false
-                object[func] = function(...) mainhandler(object, origfuncs[object], hooks[object][func], ...) end
-            end
+    if origfuncs[object][func] == nil then
+        if isscript then
+            origfuncs[object][func] = object:GetScript(func) or false
+            object:SetScript(func, function(...) mainhandler(origfuncs[object][func], hooks[object][func], ...) end)
+        else
+            origfuncs[object][func] = object[func] or false
+            object[func] = function(...) mainhandler(origfuncs[object][func], hooks[object][func], ...) end
         end
     end
 end
@@ -108,7 +114,7 @@ end
 
 function core.ColourPlayer(unit)
     local _,c = UnitClass(unit)
-    return ( c and classColours[c] ) or "FFFFFF"
+    return ( c and UnitIsPlayer(unit) and classColours[c] ) or "FFFFFF"
 end
 
 --[[----------------------------------------------------------------------
@@ -156,7 +162,7 @@ end
 
 -- For initializing the database and hooking functions.
 function core:Initialize()
-    db = TinyTipModulesDB or TinyTip_StandAloneDB
+    db = TinyTipModulesDB or TinyTip_StandAloneDB or {}
 end
 
 -- Setting variables that only need to be set once goes here.
@@ -165,7 +171,7 @@ function core:Enable()
 end
 
 -- Load all modules for "Always".
-for i=1,GetNumAddons() do
+for i=1,GetNumAddOns() do
     if GetAddOnMetadata(i, "X-TinyTipModule-Always") then
         local _, reason = LoadAddOn(i)
         if reason then

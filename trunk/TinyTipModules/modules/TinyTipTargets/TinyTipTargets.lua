@@ -41,7 +41,7 @@ if not modulecore then
     module = {}
 else
     _, module = GetAddOnInfo("TinyTipTargets")
-    module = modulecore:NewModule(module)
+    module = modulecore:NewModule(module or "TinyTipTargets")
     db = modulecore:GetDB()
     ColourPlayer = modulecore.ColourPlayer
     HookOnTooltipSetUnit = modulecore.HookOnTooltipSetUnit
@@ -56,12 +56,14 @@ end
 if not modulecore then
     ColourPlayer = function(unit)
         local _,c = UnitClass(unit)
-        if c and ClassColours[c] then return ClassColours[c] end
-        return "FFFFFF"
+        return ( c and UnitIsPlayer(unit) and ClassColours[c]) or "FFFFFF"
     end
 end
 
-function module:AddTargets(unit)
+function module.AddTargets(unit)
+    local self = module
+    if not UnitExists(unit) then return end
+
     -- Unit on the tooltip
     if db["TargetsTooltipUnit"] ~= "DISABLED" then
         local target = unit .. "target"
@@ -145,7 +147,7 @@ if not modulecore then
             OriginalOnTooltipSetUnit(self,...)
         end
             local _, unit = self:GetUnit()
-            module:AddTargets(unit)
+            module.AddTargets(unit)
             GameTooltip:Show()
     end
     HookOnTooltipSetUnit = function(tooltip)
@@ -169,6 +171,7 @@ end
 --[[-------------------------------------------------------
 -- Initialization States
 ----------------------------------------------------------]]
+local EventFrame
 
 function module:ReInitialize()
     if not modulecore and not ClassColours then
@@ -187,8 +190,12 @@ end
 function module:Initialize()
     db = db or TinyTipTargets_StandAloneDB or {}
 
-    HookOnTooltipSetUnit(GameTooltip, AddTargets, true)
-    if modulecore then self:RegisterEvent("UNIT_TARGET") end
+    HookOnTooltipSetUnit(GameTooltip, self.AddTargets)
+    if modulecore then
+        self:RegisterEvent("UNIT_TARGET")
+    else
+       EventFrame:RegisterEvent("UNIT_TARGET")
+    end
 end
 
 -- Setting variables that only need to be set once goes here.
@@ -197,10 +204,9 @@ function module:Enable()
 end
 
 -- TinyTipModules NOT loaded
-local EventFrame
 if not modulecore then
     local function OnEvent(self, event, arg1, ...)
-        if event == "ADDON_LOADED" and arg1 == "TinyTip" then
+        if event == "ADDON_LOADED" and arg1 == "TinyTipTargets" then
             module:Initialize()
             if not module.loaded then
                 module:Enable()
@@ -216,6 +222,5 @@ if not modulecore then
     EventFrame = CreateFrame("Frame", nil, GameTooltip)
     EventFrame:RegisterEvent("ADDON_LOADED")
     EventFrame:RegisterEvent("PLAYER_LOGIN")
-    EventFrmae:RegisterEvent("UNIT_TARGET")
     EventFrame:SetScript("OnEvent", OnEvent)
 end

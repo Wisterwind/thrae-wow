@@ -9,15 +9,15 @@
 ## X-Category: User Interface Enhancements
 ##
 
-libs/Dongle-1.0/Dongle.lua
+libs\Dongle-1.0\Dongle.lua
 TinyTipModules.lua
 
 # TinyTipTargets module
-modules/TinyTipTargets/localization/TinyTipLocale.lua
-modules/TinyTipTargets/localization/TinyTipLocale_deDE.lua
-modules/TinyTipTargets/localization/TinyTipLocale_frFR.lua
-modules/TinyTipTargets/localization/TinyTipLocale_esES.lua
-modules/TinyTipTargets/localization/TinyTipLocale_koKR.lua
-modules/TinyTipTargets/localization/TinyTipLocale_zhTW.lua
-modules/TinyTipTargets/localization/TinyTipLocale_zhCN.lua
-modules/TinyTipTargets/TinyTipTargets.lua
+modules\TinyTipTargets\localization\TinyTipLocale.lua
+modules\TinyTipTargets\localization\TinyTipLocale_deDE.lua
+modules\TinyTipTargets\localization\TinyTipLocale_frFR.lua
+modules\TinyTipTargets\localization\TinyTipLocale_esES.lua
+modules\TinyTipTargets\localization\TinyTipLocale_koKR.lua
+modules\TinyTipTargets\localization\TinyTipLocale_zhTW.lua
+modules\TinyTipTargets\localization\TinyTipLocale_zhCN.lua
+modules\TinyTipTargets\TinyTipTargets.lua
