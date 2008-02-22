@@ -180,5 +180,18 @@ end
 
 -- Setting variables that only need to be set once goes here.
 function core:Enable()
-       self:ReInitialize()
+    -- Load all modules for "Always".
+    for i=1,GetNumAddOns() do
+        if not IsAddOnLoaded(i) and GetAddOnMetadata(i, "X-TinyTipModule-Always") then
+            local _, reason = LoadAddOn(i)
+            local _, title = GetAddOnInfo(i)
+            if reason then
+                self:Print( title .. " LoadOnDemand Error - " .. reason )
+            else
+                self:Print( "Loaded " .. title)
+            end
+        end
+    end
+
+    self:ReInitialize()
 end
