@@ -163,20 +163,22 @@ end
 -- For initializing the database and hooking functions.
 function core:Initialize()
     db = TinyTipModulesDB or TinyTip_StandAloneDB or {}
+
+    -- Load all modules for "Always".
+    for i=1,GetNumAddOns() do
+        if not IsAddOnLoaded(i) and GetAddOnMetadata(i, "X-TinyTipModule-Always") then
+            local _, reason = LoadAddOn(i)
+            local _, title = GetAddOnInfo(i)
+            if reason then
+                self:Print( title .. " LoadOnDemand Error - " .. reason )
+            else
+                self:Print( "Loaded " .. title)
+            end
+        end
+    end
 end
 
 -- Setting variables that only need to be set once goes here.
 function core:Enable()
        self:ReInitialize()
-end
-
--- Load all modules for "Always".
-for i=1,GetNumAddOns() do
-    if GetAddOnMetadata(i, "X-TinyTipModule-Always") then
-        local _, reason = LoadAddOn(i)
-        if reason then
-            local _, title = GetAddOnInfo(i)
-            core:Print( title .. " LoadOnDemand Error - " .. reason )
-        end
-    end
 end
