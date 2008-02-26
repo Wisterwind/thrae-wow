@@ -29,7 +29,7 @@
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ---------------------------------------------------------------------------]]
 local major = "DongleStub"
-local minor = tonumber(string.match("$Revision: 125 $", "(%d+)") or 1)
+local minor = tonumber(string.match("$Revision: 313 $", "(%d+)") or 1)
 
 local g = getfenv(0)
 
@@ -155,7 +155,7 @@ end
 ---------------------------------------------------------------------------]]
 
 local major = "Dongle-1.0"
-local minor = tonumber(string.match("$Revision: 125 $", "(%d+)") or 1) + 500
+local minor = tonumber(string.match("$Revision: 612 $", "(%d+)") or 1) + 500
 -- ** IMPORTANT NOTE **
 -- Due to some issues we had previously with Dongle revision numbers
 -- we need to artificially inflate the minor revision number, to ensure
