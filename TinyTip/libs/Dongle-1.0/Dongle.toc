@@ -1,0 +1,9 @@
+## Interface: 20100
+## Title: Dongle
+## Version: Dongle-1.0-RC1
+## Author: Dongle Development Team
+## Notes: Minimal addon framework
+## LoadOnDemand: 1
+
+DongleStub.lua
+Dongle.lua
