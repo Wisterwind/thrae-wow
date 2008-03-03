@@ -90,17 +90,32 @@ function module.TooltipFormat(unit, name, realm, isPlayer, isPlayerOrPet, isDead
     -- First Line
     if not isPlayer then isPlayer = UnitIsPlayer(unit) end
     if not name or realm then name, realm = UnitName(unit) end
-    local rankNumber
-    _, rankNumber = GetPVPRankInfo(UnitPVPRank(unit), unit)
-    if isPlayer and rankNumber > 0 then
-        -- RankNumber UnitName PlayerRealm
-        GameTooltipTextLeft1:SetText( string.format(L.strformat_ranknumber .. " %s",
-                             rankNumber,
-                             (name or L.UnknownEntity) .. ( (realm and
-                             realm ~= PlayerRealm and (" (" .. realm .. ")") ) or "")))
-    else -- UnitName PlayerRealm
-        GameTooltipTextLeft1:SetText( (name or L.UnknownEntity) .. ( (realm and
-                             realm ~= PlayerRealm and (" (" .. realm .. ")") ) or ""))
+    local _, rankNumber
+    if db["PvPRankText"] ~= 2 then
+        _, rankNumber = GetPVPRankInfo(UnitPVPRank(unit), unit)
+    end
+    if isPlayer then
+        if rankNumber and rankNumber > 0 then
+            if db["PvPRankText"] == 1 then
+                -- UnitName PlayerRealm RankNumber
+                GameTooltipTextLeft1:SetText( string.format( "%s " .. L.strformat_ranknumber,
+                                    (name or L.UnknownEntity) .. ( (realm and
+                                    realm ~= PlayerRealm and
+                                    ( (db["KeyServer"] and "(*)") or (" (" .. realm .. ")") )) or ""),
+                                    rankNumber))
+            else
+                -- RankNumber UnitName PlayerRealm
+                GameTooltipTextLeft1:SetText( string.format(L.strformat_ranknumber .. " %s",
+                                    rankNumber,
+                                    (name or L.UnknownEntity) .. ( (realm and
+                                    realm ~= PlayerRealm and
+                                    ( (db["KeyServer"] and "(*)") or (" (" .. realm .. ")") )) or "")))
+            end
+        else -- UnitName PlayerRealm
+            GameTooltipTextLeft1:SetText( (name or L.UnknownEntity) .. ( (realm and
+                                 realm ~= PlayerRealm and
+                                 ( (db["KeyServer"] and "(*)") or (" (" .. realm .. ")") )) or ""))
+        end
     end
 
     -- Reaction coloring
@@ -155,13 +170,13 @@ function module.TooltipFormat(unit, name, realm, isPlayer, isPlayerOrPet, isDead
     end
 
     -- We like to know who our friends are.
-    if isPlayer and reactionText == FACTION_STANDING_LABEL5 and realm == PlayerRealm and db["Friends"] ~= 2 then
+    if isPlayer and reactionText == FACTION_STANDING_LABEL5 and realm == PlayerRealm and db["ColourFriends"] ~= 2 then
         local numFriends = GetNumFriends()
         local friendName, friendLevel
         for i = 1,numFriends,1 do
             friendName,friendLevel = GetFriendInfo(i)
             if friendName and friendName ~= name and friendLevel ~= nil and friendLevel > 0 then
-                if db["Friends"] == 1 or db["BGColor"] == 1 or db["BGColor"] == 3 then
+                if db["ColourFriends"] == 1 or db["BGColor"] == 1 or db["BGColor"] == 3 then
                     GameTooltipTextLeft1:SetTextColor(0.58, 0.0, 0.83)
                 else
                     bdR,bdG,bdB = 0.29, 0.0, 0.42
@@ -187,17 +202,8 @@ function module.TooltipFormat(unit, name, realm, isPlayer, isPlayerOrPet, isDead
         if guildLine then
             guildLine:SetText( "<" .. guildLine:GetText().. ">" )
             -- We like to know who our guild members are.
-            if guildName and IsInGuild() and guildName == GetGuildInfo("player")
-            and db["Friends"] ~= 2 then
-            --[[
-                if not db["Friends"] and not UnitIsUnit(unit, "player")
-                and db["BGColor"] ~= 3 and db["BGColor"] ~= 1 then
-                    bdR,bdG,bdB = 0.4, 0.1, 0.5
-                    line:SetTextColor( GameTooltipTextLeft1:GetTextColor() )
-                else
-            --]]
-                    guildLine:SetTextColor( 0.58, 0.0, 0.83 )
-            --    end
+            if guildName and IsInGuild() and guildName == GetGuildInfo("player") then
+                guildLine:SetTextColor( 0.58, 0.0, 0.83 )
             else -- other guilds or NPC trade line
                 guildLine:SetTextColor( GameTooltipTextLeft1:GetTextColor() )
             end
@@ -236,37 +242,44 @@ function module.TooltipFormat(unit, name, realm, isPlayer, isPlayerOrPet, isDead
         end
 
         if isPlayer then
-             local race = UnitRace(unit)
-             levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "DDEEAA") ..
-                             (race or "") .. " |r|cFF" ..
-                             (deadOrTappedColour or ColourPlayer(unit)) .. (UnitClass(unit) or "" ) .. "|r"
+            local race
+            if not db["HideRace"] then
+                race = UnitRace(unit)
+            end
+            levelLineText = levelLineText .. ((race and
+                                             (" |cFF" .. (deadOrTappedColour or "DDEEAA") .. race .. " |r")) or "") ..
+                            "|cFF" .. (deadOrTappedColour or ColourPlayer(unit)) .. (UnitClass(unit) or "" ) .. "|r"
         else -- pet or npc
             if not isPlayerOrPet then
                 local npcType = UnitClassification(unit) -- Elite,etc. status
                 if npcType and npcType ~= "normal" then
                     if npcType == "elite" then
-                        levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "FFCC00") .. L.Elite .. "|r"
+                        levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "FFCC00") ..
+                                                        ((db["KeyElite"] and "++") or L.Elite) .. "|r"
                     elseif npcType == "worldboss" then
-                        levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "FF0000") .. L.Boss .. "|r"
+                        levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "FF0000") ..
+                                                        ((db["KeyElite"] and "(!)") or L.Boss) .. "|r"
                     elseif npcType == "rare" then
                         levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "FF66FF") ..
-                                                         L.Rare .. "|r"
+                                                        ((db["KeyElite"] and "+") or L.Rare) .. "|r"
                     elseif npcType == "rareelite" then
-                        levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "FFAAFF") ..
-                                                            L["Rare Elite"] .. "|r"
+                        levelLineText = levelLineText .. "|cFF" .. (deadOrTappedColour or "FFAAFF") ..
+                                                        ((db["KeyElite"] and "+++") or L["Rare Elite"]) .. "|r"
                     else -- should never get here
                         levelLineText = levelLineText .. " [|cFF" ..
                                         (deadOrTappedColour or "FFFFFF") .. npcType .. "|r]"
                     end
                 end
              end
-             if isPlayerOrPet then
-                 levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "DDEEAA") ..
+             if not db["HideNPCType"] then
+                if isPlayerOrPet then
+                     levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "DDEEAA") ..
                                                  (UnitCreatureFamily(unit) or L.Unknown) .. "|r"
-             else
-                 levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "DDEEAA") ..
+                else
+                     levelLineText = levelLineText .. " |cFF" .. (deadOrTappedColour or "DDEEAA") ..
                                                  (UnitCreatureType(unit) or L.Unknown) .. "|r"
-             end
+                end
+            end
          end
 
         -- add corpse/tapped line
