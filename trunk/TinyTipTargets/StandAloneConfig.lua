@@ -10,14 +10,16 @@ if not TinyTipDB or not TinyTipDB.configured then
                 -- To select the TinyTip default, set the value to nil.
                 --]]
                 --                              -- default, option1, option2, etc.
-                ["TargetsTooltipUnit"] = nil,   -- nil, "DISABLED", "APPEND"
-                                                -- The default (nil) is to add it as a new line. "APPEND" will
+                ["TargetsTooltipUnit"] = nil,   -- nil, 1, 2
+                                                -- The default (nil) is to add it as a new line. 1 will
                                                 -- add it to the name of the unit as Name : Target.
-                ["TargetsParty"] = nil,         -- nil, "DISABLED", "SHOWALL"
+                                                -- 2 will disable this option.
+                ["TargetsParty"] = nil,         -- nil, 1, 2
                                                 -- The default (nil) is the
                                                 -- number of people in your party targeting the unit.
-                                                -- "SHOWALL" will show all their names.
-                ["TargetsRaid"] = nil,          -- nil, "DISABLED"
+                                                -- 1 will show all their names.
+                                                -- 2 will disable this option.
+                ["TargetsRaid"] = nil,          -- nil, 1
                                                 -- The default (nil) is enabled.
     }
 
