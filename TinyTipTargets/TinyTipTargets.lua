@@ -68,10 +68,10 @@ function module.AddTargets(unit)
     if not UnitExists(unit) then return end
 
     -- Unit on the tooltip
-    if db["TargetsTooltipUnit"] ~= "DISABLED" then
+    if db["TargetsTooltipUnit"] ~= 2 then
         local target = unit .. "target"
         if UnitExists(target) then
-            if db["TargetsTooltipUnit"] == "APPEND" then
+            if db["TargetsTooltipUnit"] == 1 then
                 GameTooltip:AppendText( strformat(" : |cFF%s%s|r",
                                         ColourPlayer(target),
                                         (UnitIsUnit(target, "player") and L["<< YOU >>"]) or UnitName(target) or L["UnknownEntity"]) )
@@ -86,9 +86,9 @@ function module.AddTargets(unit)
 
     -- If party is targeting unit on the tooltip
     local num = GetNumPartyMembers() or 0
-    if db["TargetsParty"] ~= "DISABLED" and num > 0 then
+    if db["TargetsParty"] ~= 2 and num > 0 then
         local result, isfocus
-        local showall = db["TargetsParty"] == "SHOWALL"
+        local showall = db["TargetsParty"] == 1
         for i = 1,num do
             local uid = "party" .. i
             local tuid = uid .. "target"
@@ -115,7 +115,7 @@ function module.AddTargets(unit)
     end
 
     num = GetNumRaidMembers() or 0
-    if db["TargetsRaid"] ~= "DISABLED" and num > 0 then
+    if db["TargetsRaid"] ~= 1 and num > 0 then
         local result, isfocus, isma, ismt, _
         for i = 1,num do
             local uid = "raid" .. i
