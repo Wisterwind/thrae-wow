@@ -41,9 +41,10 @@ if not modulecore then
     module = {}
     module.name, module.localizedname = name, name
 else
-    local aname, localizedname = GetAddOnInfo(name)
-    if aname and not IsAddOnLoaded(aname) then return end -- skip internal loading if module is external
-    module = modulecore:NewModule(aname or name)
+    local localizedname, reason
+    _, localizedname, _, _, _, reason = GetAddOnInfo(name)
+    if (not reason or reason ~= "MISSING") and not IsAddOnLoaded(name) then return end -- skip internal loading if module is external
+    module = modulecore:NewModule(name)
     module.name, module.localizedname = name, localizedname or name
     db = modulecore:GetDB()
     ColourPlayer = modulecore.ColourPlayer
