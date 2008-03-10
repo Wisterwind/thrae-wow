@@ -188,6 +188,10 @@ local function showoptionsgui()
         elseif reason then
             self:Print(self.localizedname .. ": LoadOnDemand Error - " .. reason)
         end
+    elseif TinyTipOptions.Show then
+        TinyTipOptions:Show()
+    else
+        self:Print(self.localizedname .. ": Old version of TinyTipOptions. Please update.")
     end
 end
 
