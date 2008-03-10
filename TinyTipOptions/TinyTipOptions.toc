@@ -1,9 +1,11 @@
-﻿## Interface: 20200
+﻿## Interface: 20300
 ## Author: Thrae
 ## Title: TinyTipOptions
 ## Title-deDE: TinyTip Optionen
 ## Title-esES: Opciones de TinyTip
 ## Title-koKR: TinyTip 설정
+## Title-zhCN: TinyTip设置
+## Title-zhTW: TinyTip設定
 ## Notes: Options for |cFF0000FFTinyTip|r (LoadOnDemand).
 ## Notes-esES: Opciones de |cFF0000FFTinyTip|r (LoadOnDemand).
 ## Dependencies: TinyTip
