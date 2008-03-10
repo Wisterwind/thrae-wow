@@ -1,13 +1,17 @@
 ## Interface: 20300
 ## Author: Thrae
-## Version: 0.2
+## Version: 0.2-Beta
 ## Title: TinyTip
-## Notes: Interacts with TinyTip modules, either integrated or standalone, to provide extra centralized functionality. Required for an in-game options menu. Comes with different modules by default, all of which can act by themselves as a separate addon.
+## Notes: Interacts with TinyTip modules, either integrated or standalone, to provide extra centralized functionality. Required for an in-game options menu and some other features. Comes with different modules by default, all of which can act by themselves as separate addons.
 ##
 ## X-Website: http://code.google.com/p/thrae-wow/
 ## X-Email: generalmx@gmail.com
 ## X-Category: Interface Enhancements
 ##
+## SavedVariables: TinyTipDB
+##
+## LoadWith: MobInfo2
+## OptionalDeps: Dongle, Dongle-1.0
 
 libs\Dongle-1.0\Dongle.lua
 TinyTip.lua
