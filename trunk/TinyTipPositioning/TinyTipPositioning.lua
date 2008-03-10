@@ -212,8 +212,9 @@ end
 -- Initialization States
 ----------------------------------------------------------]]
 
---[[
-function module:ReInitialize()
+
+function module:ReInitialize(_db)
+    db = _db or db
 end
 
 function module:Standby()
@@ -222,7 +223,7 @@ end
 
 -- For initializing the database and hooking functions.
 function module:Initialize()
-    db = db or TinyTip_StandAloneDB or {}
+    db = ( modulecore and modulecore:GetDB() ) or TinyTip_StandAloneDB or {}
 
     if OriginalGameTooltipSetDefaultAnchor == nil then
         OriginalGameTooltipSetDefaultAnchor = _G.GameTooltip_SetDefaultAnchor or false
@@ -232,6 +233,7 @@ end
 
 -- Setting variables that only need to be set once goes here.
 function module:Enable()
+    self:ReInitialize()
 end
 
 -- TinyTipModuleCore NOT loaded
