@@ -20,6 +20,19 @@ local UnitClass, UnitIsPlayer = UnitClass, UnitIsPlayer
 
 local L = _G.TinyTipLocale
 local classColours, hooks, origfuncs
+local EventFrame
+local db
+
+--[[----------------------------------------------------------------------
+-- Quick Localization
+------------------------------------------------------------------------]]
+
+local slash2 = "ttip"
+--[[
+if GetLocale() == "deDE" then
+    slash2 = "foo"
+else...
+--]]
 
 --[[----------------------------------------------------------------------
 -- Module Initialization
@@ -31,7 +44,48 @@ core.name, core.localizedname = name, localizedname or name
 _G.TinyTip = core
 
 --[[----------------------------------------------------------------------
--- Local Functions
+-- Shared Utility Functions
+------------------------------------------------------------------------]]
+
+function core.ColourPlayer(unit)
+    local _,c = UnitClass(unit)
+    return ( c and UnitIsPlayer(unit) and classColours[c] ) or "FFFFFF"
+end
+
+--[[----------------------------------------------------------------------
+-- Events
+-------------------------------------------------------------------------]]
+
+local function OnShow(self)
+    local dbp = core.db.profile
+    if dbp["HideInFrames"] then
+        local owner, unit = GameTooltip:GetOwner(), GameTooltip:GetUnit()
+        if unit and owner ~= UIParent then
+            if dbp["HideInCombat"] then
+                if InCombatLockdown() then
+                    GameTooltip:Hide()
+                end
+            else
+                GameTooltip:Hide()
+            end
+        end
+    elseif dbp["HideInCombat"] then
+        if InCombatLockdown() then
+            local unit = GameTooltip:GetUnit()
+            if unit then
+                GameTooltip:Hide()
+            end
+        end
+    end
+end
+
+function core:PLAYER_ENTERING_WORLD()
+    local dbp = self.db.profile
+    GameTooltip:SetScale( dbp["Scale"] or 1.0 )
+end
+
+--[[----------------------------------------------------------------------
+-- Hooking
 ------------------------------------------------------------------------]]
 
 local function handlerOnTooltipSetUnit(origfunc,handlers,self,...)
@@ -110,19 +164,6 @@ local function unhook(object, func, handler)
     end
 end
 
---[[----------------------------------------------------------------------
--- Public Functions
-------------------------------------------------------------------------]]
-
-function core.ColourPlayer(unit)
-    local _,c = UnitClass(unit)
-    return ( c and UnitIsPlayer(unit) and classColours[c] ) or "FFFFFF"
-end
-
---[[----------------------------------------------------------------------
--- Shared Hooks
-------------------------------------------------------------------------]]
-
 function core.HookOnTooltipSetUnit(tooltip, handler, insert)
     hook(tooltip, "OnTooltipSetUnit", handlerOnTooltipSetUnit, handler, true, insert)
 end
@@ -135,8 +176,43 @@ end
 -- Database Functions
 ------------------------------------------------------------------------]]
 
+local function showoptionsgui()
+    if not TinyTipOptions then
+        local loaded, reason = LoadAddOn("TinyTipOptions")
+        if loaded then
+            if TinyTipOptions and TinyTipOptions.Show then
+                TinyTipOptions:Show()
+            else
+                self:Print(self.localizedname .. ": Old version of TinyTipOptions. Please update.")
+            end
+        elseif reason then
+            self:Print(self.localizedname .. ": LoadOnDemand Error - " .. reason)
+        end
+    end
+end
+
 function core:GetDB()
-    return db
+    return self.db.profile
+end
+
+function core:GetCurrentProfile()
+    return self.db:GetCurrentProfile()
+end
+
+function core:ToggleSetProfile()
+    if self.db:GetCurrentProfile() ~= "char" then
+        self.db:SetProfile("char")
+    else
+        self.db:SetProfile("global")
+    end
+
+    self:ReInitialize()
+end
+
+function core:ResetDatabsae()
+    self:Print(self.localizedname .. ": ResetDB.")
+    db:ResetDB()
+    self:ReInitialize()
 end
 
 --[[----------------------------------------------------------------------
@@ -144,6 +220,72 @@ end
 -------------------------------------------------------------------------]]
 
 function core:ReInitialize()
+    self:UnregisterAllEvents()
+
+    local dbp = self.db.profile
+    if dbp["Scale"] and dbp["Scale"] ~= 1.0 then
+        self:RegisterEvent("PLAYER_ENTERING_WORLD")
+    end
+    if dbp["HideInFrames"] or dbp["HideInCombat"] then
+        if not EventFrame then
+            EventFrame = CreateFrame("Frame", nil, GameTooltip)
+            EventFrame:Show()
+        end
+        EventFrame:SetScript("OnShow", OnShow)
+        -- EventFrame:SetScript("OnHide", OnHide)
+    elseif EventFrame then
+        EventFrame:SetScript("OnShow", nil)
+        -- EventFrame:SetScript("OnHide", nil)
+    end
+    for name,module in self:IterateModules() do
+        if module.ReInitialize then
+            module:ReInitialize(dbp)
+        end
+    end
+end
+
+--[[
+function core:Standby()
+    for name,module in self:IterateModules() do
+        module:Standby()
+    end
+    classColours = nil
+end
+
+function core:Wakeup()
+end
+--]]
+
+-- For initializing the database and hooking functions.
+function core:Initialize()
+    if TinyTipDB and TinyTipDB._v then
+        self:Print(self.localizedname .. ": Detected TinyTip 1.x database. Resetting values.")
+        TinyTipDB = {}
+    end
+
+    self.db = self:InitializeDB("TinyTipDB", { profile = { } }, "global")
+    db = self.db
+
+    -- Load all modules for "Always".
+    --[[
+    for i=1,GetNumAddOns() do
+        if not IsAddOnLoaded(i) and GetAddOnMetadata(i, "X-TinyTip-Load-Always") then
+            local _, reason = LoadAddOn(i)
+            local _, title = GetAddOnInfo(i)
+            if reason then
+                self:Print( title .. " (Initialize) LoadOnDemand Error - " .. reason )
+            else
+                self:Print( "Loaded " .. title)
+            end
+        end
+    end
+    --]]
+
+    self:ReInitialize()
+end
+
+-- Setting variables that only need to be set once goes here.
+function core:Enable()
     if not classColours then
         classColours = {}
         self.ClassColours = classColours
@@ -151,20 +293,6 @@ function core:ReInitialize()
             classColours[k] = strformat("%2x%2x%2x", v.r*255, v.g*255, v.b*255)
         end
     end
-end
-
-function core:Standby()
-    classColours = nil
-end
-
---[[
-function core:Wakeup()
-end
---]]
-
--- For initializing the database and hooking functions.
-function core:Initialize()
-    db = TinyTipDB or TinyTip_StandAloneDB or {}
 
     -- Load all modules for "Always".
     for i=1,GetNumAddOns() do
@@ -172,28 +300,18 @@ function core:Initialize()
             local _, reason = LoadAddOn(i)
             local _, title = GetAddOnInfo(i)
             if reason then
-                self:Print( title .. " LoadOnDemand Error - " .. reason )
+                self:Print( title .. " (Enable) LoadOnDemand Error - " .. reason )
             else
-                self:Print( "Loaded " .. title)
-            end
-        end
-    end
-end
-
--- Setting variables that only need to be set once goes here.
-function core:Enable()
-    -- Load all modules for "Always".
-    for i=1,GetNumAddOns() do
-        if not IsAddOnLoaded(i) and GetAddOnMetadata(i, "X-TinyTip-Load-Always") then
-            local _, reason = LoadAddOn(i)
-            local _, title = GetAddOnInfo(i)
-            if reason then
-                self:Print( title .. " LoadOnDemand Error - " .. reason )
-            else
-                self:Print( "Loaded " .. title)
+                --self:Print( "Loaded " .. title)
             end
         end
     end
 
-    self:ReInitialize()
+
+    _G["SLASH_TINYTIP1"] = "/" .. string.lower(self.name)
+    _G["SLASH_TINYTIP2"] = "/" .. string.upper(self.localizedname)
+    _G["SLASH_TINYTIP3"] = "/" .. string.lower(self.localizedname)
+    _G["SLASH_TINYTIP4"] = "/" .. slash2
+    _G.SlashCmdList["TINYTIP"] = showoptionsgui
 end
+
