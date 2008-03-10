@@ -115,7 +115,7 @@ TinyTipOptionsLocale = {
     Opt_TargetsRaid = "Raid",
 
     Map_TargetsTooltipUnit = {
-        [1] = "Show Target On Same Line As UnitName".
+        [1] = "Show Target On Same Line As UnitName",
         [2] = "Off", -- do not change
     },
 

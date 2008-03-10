@@ -116,7 +116,7 @@ TinyTipOptionsLocale = setmetatable({
     Opt_TargetsRaid = "Raid",
 
     Map_TargetsTooltipUnit = {
-        [1] = "Zeige Ziel des Spielers in der gleichen Spalte wie seinen Namen".
+        [1] = "Zeige Ziel des Spielers in der gleichen Spalte wie seinen Namen",
         [2] = "Off", -- do not change
     },
 

@@ -13,11 +13,11 @@
 
 embeds.xml
 
-localization/TinyTipOptionsLocale.lua
-## localization/TinyTipOptionsLocale_frFR.lua
-localization/TinyTipOptionsLocale_deDE.lua
-localization/TinyTipOptionsLocale_zhCN.lua
-localization/TinyTipOptionsLocale_koKR.lua
-localization/TinyTipOptionsLocale_zhTW.lua
-localization/TinyTipOptionsLocale_esES.lua
+localization\TinyTipOptionsLocale.lua
+## localization\TinyTipOptionsLocale_frFR.lua
+localization\TinyTipOptionsLocale_deDE.lua
+localization\TinyTipOptionsLocale_zhCN.lua
+localization\TinyTipOptionsLocale_koKR.lua
+localization\TinyTipOptionsLocale_zhTW.lua
+localization\TinyTipOptionsLocale_esES.lua
 TinyTipOptions.lua

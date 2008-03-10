@@ -98,7 +98,7 @@ local function DDAddScale(opt, func, default)
     )
 end
 
-function module:CreateDDMenu(level,value)
+function module.CreateDDMenu(level,value)
     db = core:GetDB()
     if not db then return end
 
@@ -173,115 +173,114 @@ function module:CreateDDMenu(level,value)
             DDAddArrow("TargetsTooltipUnit")
             DDAddArrow("TargetsParty")
             DDAddArrow("TargetsRaid")
+        end
+    elseif level == 3 then
+        local k,v
+        if value == "MAnchor" then
+            dewdrop:AddLine('text', L.GameDefault,
+                'isRadio', true,
+                'checked', db["MAnchor"] == "GAMEDEFAULT",
+                'func', SetDB,
+                'arg1', "MAnchor",
+                'arg2', "GAMEDEFAULT"
+            )
 
-        elseif level == 3 then
-            local k,v
-            if value == "MAnchor" then
-                dewdrop:AddLine('text', L.GameDefault,
+            dewdrop:AddLine('text', L.CURSOR,
+                'isRadio', true,
+                'checked', not db["MAnchor"],
+                'func', SetDB,
+                'arg1', "MAnchor"
+            )
+
+            for k,v in pairs(L.Map_Anchor) do
+                dewdrop:AddLine('text', L[v] or v,
                     'isRadio', true,
-                    'checked', db["MAnchor"] == "GAMEDEFAULT",
+                    'checked', db["MAnchor"] == k,
                     'func', SetDB,
                     'arg1', "MAnchor",
-                    'arg2', "GAMEDEFAULT"
-                )
-
-                dewdrop:AddLine('text', L.CURSOR,
-                    'isRadio', true,
-                    'checked', not db["MAnchor"],
-                    'func', SetDB,
-                    'arg1', "MAnchor"
-                )
-
-                for k,v in pairs(L.Map_Anchor) do
-                    dewdrop:AddLine('text', L[v] or v,
-                        'isRadio', true,
-                        'checked', db["MAnchor"] == k,
-                        'func', SetDB,
-                        'arg1', "MAnchor",
-                        'arg2', k
-                    )
-                end
-            elseif value == "FAnchor" then
-                dewdrop:AddLine('text', L.GameDefault,
-                    'isRadio', true,
-                    'checked', not db["FAnchor"],
-                    'func', SetDB,
-                    'arg1', "FAnchor"
-                )
-
-                dewdrop:AddLine('text', L.SMART,
-                    'isRadio', true,
-                    'checked', db["FAnchor"] == "SMART",
-                    'func', SetDB,
-                    'arg1', "FAnchor",
-                    'arg2', "SMART"
-                )
-
-                dewdrop:AddLine('text', L.CURSOR,
-                    'isRadio', true,
-                    'checked', db["FAnchor"] == "CURSOR",
-                    'func', SetDB,
-                    'arg1', "FAnchor",
-                    'arg2', "CURSOR"
-                )
-
-                for k,v in pairs(L.Map_Anchor) do
-                    dewdrop:AddLine('text', L[v] or v,
-                        'isRadio', true,
-                        'checked', db["FAnchor"] == k,
-                        'func', SetDB,
-                        'arg1', "FAnchor",
-                        'arg2', k
-                    )
-                end
-            elseif value == "PvPRankText" then
-                DDAddRadioBoxes(value,
-                    L.Map_PvPRankText,
-                    nil,
-                    L.TinyTipDefault
-                )
-            elseif value == "BGColor" then
-                DDAddRadioBoxes(value,
-                    L.Map_BGColor,
-                    nil,
-                    L.TinyTipDefault
-                )
-            elseif value == "Border" then
-                DDAddRadioBoxes(value,
-                    L.Map_Border,
-                    nil,
-                    L.TinyTipDefault
-                )
-            elseif value == "ColourFriends" then
-                DDAddRadioBoxes(value,
-                    L.Map_ColourFriends,
-                    nil,
-                    L.TinyTipDefault
-                )
-            elseif value == "TargetsTooltipUnit" then
-                DDAddRadioBoxes(value,
-                    L.Map_TargetsTooltipUnit,
-                    nil,
-                    L.TinyTipDefault
-                )
-            elseif value == "TargetsParty" then
-                DDAddRadioBoxes(value,
-                    L.Map_TargetsParty,
-                    nil,
-                    L.TinyTipDefault
-                )
-            elseif value == "TargetsRaid" then
-                DDAddRadioBoxes(value,
-                    L.Map_TargetsRaid,
-                    nil,
-                    L.TinyTipDefault
+                    'arg2', k
                 )
             end
+        elseif value == "FAnchor" then
+            dewdrop:AddLine('text', L.GameDefault,
+                'isRadio', true,
+                'checked', not db["FAnchor"],
+                'func', SetDB,
+                'arg1', "FAnchor"
+            )
+
+            dewdrop:AddLine('text', L.SMART,
+                'isRadio', true,
+                'checked', db["FAnchor"] == "SMART",
+                'func', SetDB,
+                'arg1', "FAnchor",
+                'arg2', "SMART"
+            )
+
+            dewdrop:AddLine('text', L.CURSOR,
+                'isRadio', true,
+                'checked', db["FAnchor"] == "CURSOR",
+                'func', SetDB,
+                'arg1', "FAnchor",
+                'arg2', "CURSOR"
+            )
+
+            for k,v in pairs(L.Map_Anchor) do
+                dewdrop:AddLine('text', L[v] or v,
+                    'isRadio', true,
+                    'checked', db["FAnchor"] == k,
+                    'func', SetDB,
+                    'arg1', "FAnchor",
+                    'arg2', k
+                )
+            end
+        elseif value == "PvPRankText" then
+            DDAddRadioBoxes(value,
+                L.Map_PvPRankText,
+                nil,
+                L.TinyTipDefault
+            )
+        elseif value == "BGColor" then
+            DDAddRadioBoxes(value,
+                L.Map_BGColor,
+                nil,
+                L.TinyTipDefault
+            )
+        elseif value == "Border" then
+            DDAddRadioBoxes(value,
+                L.Map_Border,
+                nil,
+                L.TinyTipDefault
+            )
+        elseif value == "ColourFriends" then
+            DDAddRadioBoxes(value,
+                L.Map_ColourFriends,
+                nil,
+                L.TinyTipDefault
+            )
+        elseif value == "TargetsTooltipUnit" then
+            DDAddRadioBoxes(value,
+                L.Map_TargetsTooltipUnit,
+                nil,
+                L.TinyTipDefault
+            )
+        elseif value == "TargetsParty" then
+            DDAddRadioBoxes(value,
+                L.Map_TargetsParty,
+                nil,
+                L.TinyTipDefault
+            )
+        elseif value == "TargetsRaid" then
+            DDAddRadioBoxes(value,
+                L.Map_TargetsRaid,
+                nil,
+                L.TinyTipDefault
+            )
         end
     end
 end
 
-function module:Show(_db)
+function module:Show()
     if not dewdrop then
         dewdrop = _G.AceLibrary:GetInstance("Dewdrop-2.0")
     end
@@ -290,7 +289,7 @@ function module:Show(_db)
     if not ddframe then
         ddframe = CreateFrame("Frame", nil, UIParent)
         ddframe:SetWidth(2)
-        dframe:SetHeight(2)
+        ddframe:SetHeight(2)
         ddframe:SetPoint("BOTTOMLEFT", GetCursorPosition())
         ddframe:SetClampedToScreen(true)
         dewdrop:Register(ddframe, 'dontHook', true, 'children', self.CreateDDMenu )
