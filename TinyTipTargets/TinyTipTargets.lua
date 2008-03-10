@@ -46,7 +46,6 @@ else
     if (not reason or reason ~= "MISSING") and not IsAddOnLoaded(name) then return end -- skip internal loading if module is external
     module = modulecore:NewModule(name)
     module.name, module.localizedname = name, localizedname or name
-    db = modulecore:GetDB()
     ColourPlayer = modulecore.ColourPlayer
     HookOnTooltipSetUnit = modulecore.HookOnTooltipSetUnit
 end
@@ -184,7 +183,8 @@ end
 ----------------------------------------------------------]]
 local EventFrame
 
-function module:ReInitialize()
+function module:ReInitialize(_db)
+    db = _db or db
     if not modulecore and not ClassColours then
         ClassColours = {}
         for k,v in pairs(RAID_CLASS_COLORS) do
@@ -199,13 +199,13 @@ end
 
 -- For initializing the database and hooking functions.
 function module:Initialize()
-    db = db or TinyTipTargets_StandAloneDB or {}
+    db = ( modulecore and modulecore:GetDB() ) or TinyTipTargets_StandAloneDB or {}
 
     HookOnTooltipSetUnit(GameTooltip, self.AddTargets)
     if modulecore then
         self:RegisterEvent("UNIT_TARGET")
     else
-       EventFrame:RegisterEvent("UNIT_TARGET")
+        EventFrame:RegisterEvent("UNIT_TARGET")
     end
 end
 
