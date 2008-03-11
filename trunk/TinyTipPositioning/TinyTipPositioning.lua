@@ -37,7 +37,6 @@ else
     if (not reason or reason ~= "MISSING") and not IsAddOnLoaded(name) then return end -- skip internal loading if module is external
     module = modulecore:NewModule(name)
     module.name, module.localizedname = name, localizedname or name
-    db = modulecore:GetDB()
 end
 
 --[[-------------------------------------------------------
