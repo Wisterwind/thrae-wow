@@ -285,6 +285,16 @@ function core:Initialize()
     end
     --]]
 
+    -- Call "Initialize" for internal modules.
+    for name,module in self:IterateModules() do
+        if module.Initialize then
+            local reason = select(6, GetAddOnInfo(name))
+            if reason == "MISSING" then
+                module:Initialize()
+            end
+        end
+    end
+
     self:ReInitialize()
 end
 
@@ -311,6 +321,15 @@ function core:Enable()
         end
     end
 
+    -- Call "Enable" for internal modules.
+    for name,module in self:IterateModules() do
+        if module.Enable then
+            local reason = select(6, GetAddOnInfo(name))
+            if reason == "MISSING" then
+                module:Enable()
+            end
+        end
+    end
 
     _G["SLASH_TINYTIP1"] = "/" .. string.lower(self.name)
     _G["SLASH_TINYTIP2"] = "/" .. string.upper(self.localizedname)
