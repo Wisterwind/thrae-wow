@@ -1,0 +1,16 @@
+## Interface: 20300
+## Author: Thrae
+## Version: 0.2
+## Title: TinyTipIcons
+## Notes: Not required if you already have TinyTip, as this is a basic TinyTip module. Adds various icons and blocks to the tooltip.
+##
+## LoadManagers: TinyTip
+## X-TinyTip-Load-Always: 1
+##
+## X-Website: http://code.google.com/p/thrae-wow/
+## X-Email: generalmx@gmail.com
+## X-Category: Interface Enhancements
+##
+
+StandAloneConfig.lua
+TinyTipIcons.lua
