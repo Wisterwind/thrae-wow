@@ -65,7 +65,7 @@ end
 
 function module.TooltipFormat(unit, name, realm, isPlayer, isPlayerOrPet, isDead)
     local self = module
-    if not UnitExists(unit) then return end
+    if self.onstandby or not UnitExists(unit) or not GameTooltipTextLeft1:IsShown() then return end
 
     local numLines = GameTooltip:NumLines()
     local guildName = GetGuildInfo(unit)
@@ -199,15 +199,15 @@ function module.TooltipFormat(unit, name, realm, isPlayer, isPlayerOrPet, isDead
     -- Set the color of the trade or guild line, if it's available. This
     -- line comes before the level line.
     if afterLevelLine and afterLevelLine > 3 then
-        if guildLine then
-            guildLine:SetText( "<" .. guildLine:GetText().. ">" )
+        if guildLine and guildLine:IsShown() then
+            guildLine:SetText( "<" .. guildLine:GetText() .. ">" )
             -- We like to know who our guild members are.
             if guildName and IsInGuild() and guildName == GetGuildInfo("player") then
                 guildLine:SetTextColor( 0.58, 0.0, 0.83 )
             else -- other guilds or NPC trade line
                 guildLine:SetTextColor( GameTooltipTextLeft1:GetTextColor() )
             end
-        else
+        elseif GameTooltipTextLeft2:IsShown() then
             GameTooltipTextLeft2:SetText( "<" .. GameTooltipTextLeft2:GetText() .. ">" )
             GameTooltipTextLeft2:SetTextColor( GameTooltipTextLeft1:GetTextColor() )
         end
@@ -242,10 +242,7 @@ function module.TooltipFormat(unit, name, realm, isPlayer, isPlayerOrPet, isDead
         end
 
         if isPlayer then
-            local race
-            if not db["HideRace"] then
-                race = UnitRace(unit)
-            end
+            local race = (not db["HideRace"] and ( UnitRace(unit) or "") ) or " "
             levelLineText = levelLineText .. ((race and
                                              (" |cFF" .. (deadOrTappedColour or "DDEEAA") .. race .. " |r")) or "") ..
                             "|cFF" .. (deadOrTappedColour or ColourPlayer(unit)) .. (UnitClass(unit) or "" ) .. "|r"
