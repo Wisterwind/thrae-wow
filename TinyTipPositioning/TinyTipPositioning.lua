@@ -57,10 +57,11 @@ local getcpos = _G.GetCursorPosition
 local function OnUpdate(self, time)
             local x,y = getcpos()
             local uiscale,tscale = UIParent:GetScale(), GameTooltip:GetScale()
-            GameTooltip:ClearAllPoints()
-            GameTooltip:SetPoint(self.Anchor or "BOTTOM", UIParent, "BOTTOMLEFT",
-                                (x + (self.OffX or 0)) / uiscale / tscale,
-                                (y + (self.OffY or 0)) / uiscale / tscale)
+            local tooltip = self.tooltip
+            tooltip:ClearAllPoints()
+            tooltip:SetPoint(self.Anchor or "BOTTOM", UIParent, "BOTTOMLEFT",
+                            (x + self.OffX) / uiscale / tscale,
+                            (y + self.OffY) / uiscale / tscale)
 end
 
 -- Thanks to cladhaire for most of this one.
@@ -148,6 +149,7 @@ end
 
 local OriginalGameTooltipSetDefaultAnchor = nil
 local function SetDefaultAnchor(tooltip,owner,...)
+    if OnUpdateSet then UpdateFrame:SetScript("OnUpdate", nil) end
     if OriginalGameTooltipSetDefaultAnchor then
         if module.onstandby then
             return OriginalGameTooltipSetDefaultAnchor(tooltip,owner,...)
@@ -158,52 +160,54 @@ local function SetDefaultAnchor(tooltip,owner,...)
         return
     end
 
+    local Anchor, CAnchor, OffX, OffY
     if tooltip == GameTooltip then
-        if OnUpdateSet then UpdateFrame:SetScript("OnUpdate", nil) end
-        if owner ~= UIParent then
-            if db["FAnchor"] or db["FOffX"] ~= nil or db["FOffY"] ~= nil then
-                if db["FAnchor"] == "CURSOR" then
-                    if (db["FOffX"] ~= nil and db["FOffX"] > 0) or (db["FOffY"] ~= nil and db["FOffY"] > 0) or
-                    db["FCursorAnchor"] then
-                        UpdateFrame.OffX,UpdateFrame.OffY,UpdateFrame.Anchor = db["FOffX"], db["FOffY"], db["FCursorAnchor"]
-                        UpdateFrame:SetScript("OnUpdate", OnUpdate)
-                        OnUpdateSet = true
-                    else
-                        tooltip:SetOwner(owner, "ANCHOR_CURSOR")
+        if owner ~= UIParent then -- frame units
+            if not db["HideInFrames"] then
+                if InCombatLockdown() then -- in combat
+                    if not db["HideInCombat"] then
+                        Anchor, OffX, OffY = db["CFAnchor"] or db["FAnchor"] or "GAMEDEFAULT", db["CFOffX"] or db["FOffX"] or 0, db["CFOffY"] or db["FOffY"] or 0
                     end
-                elseif db["FAnchor"] == "SMART" then
-                    SmartSetOwner(owner, db["FOffX"], db["FOffY"], tooltip)
                 else
-                    tooltip:SetOwner(owner, "ANCHOR_NONE")
-                    tooltip:ClearAllPoints()
-                    tooltip:SetPoint(db["FAnchor"] or "BOTTOMRIGHT",
-                                     UIParent,
-                                     db["FAnchor"] or "BOTTOMRIGHT",
-                                     (db["FOffX"] or 0) - ((not db["FAnchor"] and (CONTAINER_OFFSET_X - 13)) or 0),
-                                     (db["FOffY"] or 0) + ((not db["FAnchor"] and CONTAINER_OFFSET_Y) or 0))
+                    Anchor, OffX, offY = db["FAnchor"] or "GAMEDEFAULT", db["FOffX"] or 0, db["FOffY"] or 0
                 end
             end
-        elseif db["MAnchor"] ~= "GAMEDEFAULT" or db["MOffX"] ~= nil or db["MOffY"] ~= nil then
-            if not db["MAnchor"] then
-                if (db["MOffX"] ~= nil and db["MOffX"] > 0) or (db["MOffY"] ~= nil and db["MOffY"] > 0) or
-                db["MCursorAnchor"] then
-                    UpdateFrame.OffX,UpdateFrame.OffY,UpdateFrame.Anchor = db["MOffX"], db["MOffY"], db["MCursorAnchor"]
-                    UpdateFrame:SetScript("OnUpdate", OnUpdate)
-                    OnUpdateSet = true
-                else
-                    tooltip:SetOwner(owner, "ANCHOR_CURSOR")
+            CAnchor = db["FCursorAnchor"]
+        else
+            if InCombatLockdown() then
+                if not db["HideInCombat"] then
+                    Anchor, OffX, OffY = db["MFAnchor"] or db["MAnchor"] or "CURSOR", db["MFOffX"] or db["MOffX"] or 0, db["MFOffY"] or db["MOffY"] or 0
                 end
             else
-                tooltip:SetOwner(owner, "ANCHOR_NONE")
-                tooltip:ClearAllPoints()
-                tooltip:SetPoint((db["MAnchor"] ~= "GAMEDEFAULT" and db["MAnchor"]) or "BOTTOMRIGHT",
-                                 UIParent,
-                                 (db["MAnchor"] ~= "GAMEDEFAULT" and db["MAnchor"]) or "BOTTOMRIGHT",
-                                 (db["MOffX"] or 0) - ((db["MAnchor"] == "GAMEDEFAULT"
-                                  and (CONTAINER_OFFSET_X - 13)) or 0),
-                                 (db["MOffY"] or 0) + ((db["MAnchor"] == "GAMEDEFAULT" and CONTAINER_OFFSET_Y) or 0))
+                Anchor, OffX, offY = db["MAnchor"] or "CURSOR", db["MOffX"] or 0, db["MOffY"] or 0
             end
+            CAnchor = db["MCursorAnchor"]
         end
+    elseif db["EtcAnchor"] or db["EtcOffX"] or db["EtcOffY"] then
+        Anchor, OffX, OffY = db["EtcAnchor"] or "GAMEDEFAULT", db["EtcOffX"] or 0, db["EtcOffY"] or 0
+    end
+
+    if not Anchor or not OffX or not OffY then return end -- sanity / disabled check
+
+    if Anchor == "CURSOR" then
+        if OffX or OffY or CAnchor then
+            UpdateFrame.OffX, UpdateFrame.OffY, UpdateFrame.Anchor, UpdateFrame.tooltip = OffX, OffY, CAnchor, tooltip
+            UpdateFrame:SetScript("OnUpdate", OnUpdate)
+            OnUpdateSet = true
+        else
+            tooltip:SetOwner(owner, "ANCHOR_CURSOR")
+        end
+    elseif Anchor == "SMART" then
+        SmartSetOwner(owner, OffX, OffY, tooltip)
+    else
+        tooltip:SetOwner(owner, "ANCHOR_NONE")
+        tooltip:ClearAllPoints()
+        tooltip:SetPoint((Anchor ~= "GAMEDEFAULT" and Anchor) or "BOTTOMRIGHT",
+                          UIParent,
+                         (Anchor ~= "GAMEDEFAULT" and Anchor) or "BOTTOMRIGHT",
+                          OffX - ((Anchor == "GAMEDEFAULT"
+                         and (CONTAINER_OFFSET_X - 13)) or 0),
+                         OffY + ((Anchor == "GAMEDEFAULT" and CONTAINER_OFFSET_Y) or 0))
     end
 end
 
