@@ -98,11 +98,13 @@ local function handlerOnTooltipSetUnit(origfunc,handlers,self,...)
     end
 
     local _, unit = self:GetUnit()
-    for i = 1,#handlers do
-        handlers[i](unit)
-    end
+    if unit and GameTooltip:IsShown() then
+        for i = 1,#handlers do
+            handlers[i](unit)
+        end
 
-    self:Show()
+        self:Show()
+    end
 end
 
 local function handler(origfunc,handlers,...)
@@ -177,6 +179,7 @@ end
 ------------------------------------------------------------------------]]
 
 local function showoptionsgui()
+    local self = core
     if not TinyTipOptions then
         local loaded, reason = LoadAddOn("TinyTipOptions")
         if loaded then
