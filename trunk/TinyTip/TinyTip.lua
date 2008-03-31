@@ -210,7 +210,7 @@ function core:ToggleSetProfile()
     self:ReInitialize()
 end
 
-function core:ResetDatabsae()
+function core:ResetDatabase()
     self:Print(self.localizedname .. ": ResetDB.")
     db:ResetDB()
     self:ReInitialize()
@@ -225,6 +225,7 @@ function core:ReInitialize()
 
     local dbp = self.db.profile
     if dbp["Scale"] and dbp["Scale"] ~= 1.0 then
+        GameTooltip:SetScale( dbp["Scale"] or 1.0 )
         self:RegisterEvent("PLAYER_ENTERING_WORLD")
     end
     if dbp["HideInFrames"] or dbp["HideInCombat"] then
