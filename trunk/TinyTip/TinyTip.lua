@@ -98,7 +98,7 @@ local function handlerOnTooltipSetUnit(origfunc,handlers,self,...)
     end
 
     local _, unit = self:GetUnit()
-    if unit and GameTooltip:IsShown() then
+    if unit and UnitExists(unit) and GameTooltipTextLeft1:IsShown() then
         for i = 1,#handlers do
             handlers[i](unit)
         end
@@ -130,15 +130,15 @@ local function isHooked(handlers, handler)
     end
 end
 
-local function hook(object, func, mainhandler, handler, isscript, insert)
+local function hook(object, func, mainhandler, handler, isscript, priority)
     if not origfuncs then origfuncs = {} end
     if not origfuncs[object] then origfuncs[object] = {} end
     if not hooks then hooks = {} end
     if not hooks[object] then hooks[object] = { [func] = {} } end
 
     if not isHooked(hooks[object][func], handler) then
-        if insert then
-            table.insert(hooks[object][func], 1, handler)
+        if priority then
+            table.insert(hooks[object][func], priority, handler)
         else
             table.insert(hooks[object][func], handler)
         end
@@ -166,8 +166,8 @@ local function unhook(object, func, handler)
     end
 end
 
-function core.HookOnTooltipSetUnit(tooltip, handler, insert)
-    hook(tooltip, "OnTooltipSetUnit", handlerOnTooltipSetUnit, handler, true, insert)
+function core.HookOnTooltipSetUnit(tooltip, handler, priority)
+    hook(tooltip, "OnTooltipSetUnit", handlerOnTooltipSetUnit, handler, true, priority)
 end
 
 function core.UnhookOnTooltipSetUnit(tooltip, handler)
