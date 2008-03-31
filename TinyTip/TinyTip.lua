@@ -85,6 +85,19 @@ function core:PLAYER_ENTERING_WORLD()
     GameTooltip:SetScale( dbp["Scale"] or 1.0 )
 end
 
+local function showoptionsgui()
+    if not IsAddOnLoaded("TinyTipOptions") then
+        local _, reason = LoadAddOn("TinyTipOptions")
+        local _, title = GetAddOnInfo("TinyTipOptions")
+        if reason then
+            core:Print( title .. " (Enable) LoadOnDemand Error - " .. reason )
+        else
+            --self:Print( "Loaded " .. title)
+        end
+    end
+    TinyTipOptions:Show()
+end
+
 --[[----------------------------------------------------------------------
 -- Hooking
 ------------------------------------------------------------------------]]
@@ -335,6 +348,6 @@ function core:Enable()
     _G["SLASH_TINYTIP2"] = "/" .. string.upper(self.localizedname)
     _G["SLASH_TINYTIP3"] = "/" .. string.lower(self.localizedname)
     _G["SLASH_TINYTIP4"] = "/" .. slash2
-    _G.SlashCmdList["TINYTIP"] = InterfaceOptionsFrame:Show()
+    _G.SlashCmdList["TINYTIP"] = showoptionsgui
 end
 
