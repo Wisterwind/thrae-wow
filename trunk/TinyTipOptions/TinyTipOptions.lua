@@ -305,4 +305,5 @@ function module:Initialize()
 end
 
 function module:Show()
+    InterfaceOptionsFrame:Show()
 end
