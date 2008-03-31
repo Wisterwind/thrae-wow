@@ -169,7 +169,7 @@ local function SetDefaultAnchor(tooltip,owner,...)
                         Anchor, OffX, OffY = db["CFAnchor"] or db["FAnchor"] or "GAMEDEFAULT", db["CFOffX"] or db["FOffX"] or 0, db["CFOffY"] or db["FOffY"] or 0
                     end
                 else
-                    Anchor, OffX, offY = db["FAnchor"] or "GAMEDEFAULT", db["FOffX"] or 0, db["FOffY"] or 0
+                    Anchor, OffX, OffY = db["FAnchor"] or "GAMEDEFAULT", db["FOffX"] or 0, db["FOffY"] or 0
                 end
             end
             CAnchor = db["FCursorAnchor"]
@@ -179,7 +179,7 @@ local function SetDefaultAnchor(tooltip,owner,...)
                     Anchor, OffX, OffY = db["MFAnchor"] or db["MAnchor"] or "CURSOR", db["MFOffX"] or db["MOffX"] or 0, db["MFOffY"] or db["MOffY"] or 0
                 end
             else
-                Anchor, OffX, offY = db["MAnchor"] or "CURSOR", db["MOffX"] or 0, db["MOffY"] or 0
+                Anchor, OffX, OffY = db["MAnchor"] or "CURSOR", db["MOffX"] or 0, db["MOffY"] or 0
             end
             CAnchor = db["MCursorAnchor"]
         end
@@ -190,7 +190,7 @@ local function SetDefaultAnchor(tooltip,owner,...)
     if not Anchor or not OffX or not OffY then return end -- sanity / disabled check
 
     if Anchor == "CURSOR" then
-        if OffX or OffY or CAnchor then
+        if OffX ~= 0 or OffY ~= 0 or CAnchor then
             UpdateFrame.OffX, UpdateFrame.OffY, UpdateFrame.Anchor, UpdateFrame.tooltip = OffX, OffY, CAnchor, tooltip
             UpdateFrame:SetScript("OnUpdate", OnUpdate)
             OnUpdateSet = true
