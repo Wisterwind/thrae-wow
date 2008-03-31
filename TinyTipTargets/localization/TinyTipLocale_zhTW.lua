@@ -21,4 +21,7 @@ TinyTipLocale = setmetatable({
         ["<<YOU>>"] = "** 你 **",
         ["Targeted by"] = "被關注",
         ["Unknown"] = "未知",
+        [" (F)"] = " (*)",
+        [" (MT)"] = " (!)",
+        [" (MA)"] = " <<",
 }, {__index=TinyTipLocale})

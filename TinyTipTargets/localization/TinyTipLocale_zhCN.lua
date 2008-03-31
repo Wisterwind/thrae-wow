@@ -20,4 +20,7 @@ TinyTipLocale = setmetatable({
         ["Targeting"] = "当前目标",
         ["<<YOU>>"] = ">>你<<",
         ["Targeted by"] = "关注",
+        [" (F)"] = " (*)",
+        [" (MT)"] = " (!)",
+        [" (MA)"] = " <<",
 }, {__index=TinyTipLocale})

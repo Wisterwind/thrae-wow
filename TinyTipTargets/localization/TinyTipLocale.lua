@@ -21,6 +21,9 @@ local t = {
         ["RAID"] = RAID,
         ["Unknown"] = UNKNOWN,
         ["UnknownEntity"] = UKNOWNBEING,
+        [" (F)"] = " (F)",
+        [" (MT)"] = " (MT)",
+        [" (MA)"] = " (MA)",
 }
 
 -- support for TinyTipModuleCore

@@ -71,15 +71,31 @@ function module.AddTargets(unit)
     if db["TargetsTooltipUnit"] ~= 2 then
         local target = unit .. "target"
         if UnitExists(target) then
+            local isself = UnitIsUnit(target, "player")
+            local name, colour
+            if isself then
+                if not isPlayerOrPet then isPlayerOrPet = UnitPlayerControlled(unit) end
+                local reactionNum = UnitReaction(unit, "player")
+                if ( isPlayerOrPet and UnitCanAttack(target, "player") ) or UnitIsTappedByPlayer(unit) or
+                   ( not isPlayerOrPet and reactionNum ~= nil and reactionNum > 0 and reactionNum <= 2 ) then
+                        colour = "FF0000"
+                else
+                    colour = "FFFFFF"
+                end
+                name = L["<< YOU >>"]
+            else
+                colour = ColourPlayer(target)
+                name = UnitName(target) or L["UnknownEntity"]
+            end
             if db["TargetsTooltipUnit"] == 1 then
                 GameTooltip:AppendText( strformat(" : |cFF%s%s|r",
-                                        ColourPlayer(target),
-                                        (UnitIsUnit(target, "player") and L["<< YOU >>"]) or UnitName(target) or L["UnknownEntity"]) )
+                                        colour,
+                                        name) )
             else
                 GameTooltip:AddLine( strformat("%s: |cFF%s%s|r",
                                      L["Targeting"],
-                                     ColourPlayer(target),
-                                     (UnitIsUnit(target, "player") and L["<< YOU >>"]) or UnitName(target) or L["UnknownEntity"]) )
+                                     colour,
+                                     name) )
             end
         end
     end
@@ -108,7 +124,7 @@ function module.AddTargets(unit)
                 GameTooltip:AddLine(result)
             else
                 GameTooltip:AddLine( L["Targeted by"] .. ": (" .. result .. ") " .. L["PARTY"] ..
-                                     ( (isfocus and " (*)") or "")
+                                     ( (isfocus and L[" (F)"]) or "")
                                    )
             end
         end
@@ -131,9 +147,9 @@ function module.AddTargets(unit)
         end
         if result then
             GameTooltip:AddLine( L["Targeted by"] .. ": (" .. result .. ") " .. L["RAID"] ..
-                                 ( (isfocus and " (*)") or "") ..
-                                 ( (ismt and " (!)") or "") ..
-                                 ( (isma and " <<") or "")
+                                 ( (isfocus and L[" (F)"]) or "") ..
+                                 ( (ismt and L[" (MT)"]) or "") ..
+                                 ( (isma and L[" (MA)"]) or "")
             )
         end
     end
@@ -157,8 +173,10 @@ if not modulecore then
         end
 
         local _, unit = self:GetUnit()
-        module.AddTargets(unit)
-        GameTooltip:Show()
+        if unit and UnitExists(unit) and GameTooltipTextLeft1:IsShown() then
+            module.AddTargets(unit)
+            GameTooltip:Show()
+        end
     end
     HookOnTooltipSetUnit = function(tooltip)
         if OriginalOnTooltipSetUnit == nil then
@@ -185,11 +203,16 @@ local EventFrame
 
 function module:ReInitialize(_db)
     db = _db or db
+    self:UnregisterAllEvents()
+
     if not modulecore and not ClassColours then
         ClassColours = {}
         for k,v in pairs(RAID_CLASS_COLORS) do
             ClassColours[k] = strformat("%2x%2x%2x", v.r*255, v.g*255, v.b*255)
         end
+    end
+    if not db["TargetsNoEventUpdate"] then
+        self:RegisterEvent("UNIT_TARGET")
     end
 end
 
@@ -202,11 +225,6 @@ function module:Initialize()
     db = ( modulecore and modulecore:GetDB() ) or TinyTipTargets_StandAloneDB or {}
 
     HookOnTooltipSetUnit(GameTooltip, self.AddTargets)
-    if modulecore then
-        self:RegisterEvent("UNIT_TARGET")
-    else
-        EventFrame:RegisterEvent("UNIT_TARGET")
-    end
 end
 
 -- Setting variables that only need to be set once goes here.
@@ -234,4 +252,7 @@ if not modulecore then
     EventFrame:RegisterEvent("ADDON_LOADED")
     EventFrame:RegisterEvent("PLAYER_LOGIN")
     EventFrame:SetScript("OnEvent", OnEvent)
+    module.RegisterEvent = EventFrame.RegisterEvent
+    module.UnregisterEvent = EventFrame.UnregisterEvent
+    module.UnregisterAllEvents = EventFrame.UnregisterAllEvents
 end
