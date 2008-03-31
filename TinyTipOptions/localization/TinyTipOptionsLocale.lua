@@ -113,6 +113,7 @@ TinyTipOptionsLocale = {
     Opt_TargetsTooltipUnit = "Tooltip's Unit",
     Opt_TargetsParty = "Party",
     Opt_TargetsRaid = "Raid",
+    Opt_TargetsNoEventUpdate = "Disable dynamic updating",
 
     Map_TargetsTooltipUnit = {
         [1] = "Show Target On Same Line As UnitName",
@@ -132,11 +133,16 @@ TinyTipOptionsLocale = {
     Desc_TargetsTooltipUnit = "Set whether to show the name of tooltip unit's target.",
     Desc_TargetsParty = "Set the options for seeing if anyone in your party is targeting the tooltip's unit.",
     Desc_TargetsRaid = "Set the options for seeing if anyone in your raid is targeting the tooltip's unit.",
+    Desc_TargetsNoEventUpdate = "Disable dynamic updating, meaning the targets will only update when you initially mouseover the unit.",
 
     Opt_Profiles = "Save Settings Per Character",
     Desc_Profiles = "Toggle whether to save your settings per character or globally.",
 
     Opt_Main_Default = "Reset Options",
     Desc_Main_Default = "Return this addon's settings back to their defaults.",
+    ResetDB_Confirm = "Are you SURE you want to return your settings to their default values?",
+
+    Main_General = "General",
+    WhatIsTinyTip = "Provides reformatting of the default unit tooltip, as well as extra information and more. It's what Thrae wants in a tooltip.",
 }
 
