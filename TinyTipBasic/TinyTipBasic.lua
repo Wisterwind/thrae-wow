@@ -65,7 +65,7 @@ end
 
 function module.TooltipFormat(unit, name, realm, isPlayer, isPlayerOrPet, isDead)
     local self = module
-    if self.onstandby or not UnitExists(unit) or not GameTooltipTextLeft1:IsShown() then return end
+    if self.onstandby then return end
 
     local numLines = GameTooltip:NumLines()
     local guildName = GetGuildInfo(unit)
@@ -322,8 +322,10 @@ if not modulecore then
         end
 
         local _, unit = self:GetUnit()
-        module.TooltipFormat(unit)
-        GameTooltip:Show()
+        if unit and UnitExists(unit) and GameTooltipTextLeft1:IsShown() then
+            module.TooltipFormat(unit)
+            GameTooltip:Show()
+        end
     end
     HookOnTooltipSetUnit = function(tooltip)
         if OriginalOnTooltipSetUnit == nil then
@@ -351,7 +353,7 @@ end
 function module:Initialize()
     db = ( modulecore and modulecore:GetDB() ) or TinyTip_StandAloneDB or {}
 
-    HookOnTooltipSetUnit(GameTooltip, self.TooltipFormat, true)
+    HookOnTooltipSetUnit(GameTooltip, self.TooltipFormat, 1)
 end
 
 -- Setting variables that only need to be set once goes here.
