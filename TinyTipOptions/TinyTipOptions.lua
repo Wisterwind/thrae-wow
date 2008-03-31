@@ -22,14 +22,17 @@ local module = TinyTipOptions
 
 local function ToggleDB(k)
     db[k] = nil or not db[k]
+    core:ReInitialize()
 end
 
 local function SetDB(k,v)
     db[k] = v
+    core:ReInitialize()
 end
 
 local function SetDBNum(k,v)
     db[k] = tonumber(v)
+    core:ReInitialize()
 end
 
 local function DDAddArrow(opt)
