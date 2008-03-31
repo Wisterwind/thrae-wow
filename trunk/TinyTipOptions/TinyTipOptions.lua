@@ -11,60 +11,66 @@
 --]]
 
 local _G = getfenv(0)
-local dewdrop
 local core = TinyTip
 local L = _G.TinyTipOptionsLocale
 local title = select(2, GetAddOnInfo("TinyTipOptions"))
-local ddframe, db
+local db, _
 
-TinyTipOptions = {}
-local module = TinyTipOptions
+local config = LibStub("AceConfig-3.0")
+local dialog = LibStub("AceConfigDialog-3.0")
 
-local function ToggleDB(k)
+local module = core:NewModule("TinyTipOptions")
+
+local defaults = {
+    ["MAnchor"] = "CURSOR",
+    ["FAnchor"] = "GAMEDEFAULT",
+}
+
+local function toggle(info)
+    db = core:GetDB()
+    local k = info[#info]
     db[k] = nil or not db[k]
     core:ReInitialize()
 end
 
-local function SetDB(k,v)
-    db[k] = v
+local function get(info)
+    db = core:GetDB()
+    return db[info[#info]]
+end
+
+local function set(info,value)
+    db = core:GetDB()
+    local k = info[#info]
+    if value and value == defaults[k] then
+        value = nil
+    end
+    db[k] = value
     core:ReInitialize()
 end
 
-local function SetDBNum(k,v)
-    db[k] = tonumber(v)
+local function getnum(info)
+    db = core:GetDB()
+    return db[info[#info]] or 0
+end
+
+local function setnum(info,value)
+    db = core:GetDB()
+    db[info[#info]] = tonumber(value)
     core:ReInitialize()
 end
 
-local function DDAddArrow(opt)
-    dewdrop:AddLine( 'text', L["Opt_" .. opt],
-        'hasArrow', true,
-        'value', opt,
-        'tooltipTitle', "TinyTip",
-        'tooltipText', L["Desc_" .. opt]
-    )
+local function geti(info)
+    db = core:GetDB()
+    return db[info[#info]] or 1
 end
 
-local function DDAddChecked(opt, func)
-    dewdrop:AddLine( 'text', L["Opt_" .. opt],
-        'checked', db[ opt ],
-        'func', func or ToggleDB,
-        'arg1', opt,
-        'tooltipTitle', "TinyTip",
-        'tooltipText', L["Desc_" .. opt]
-    )
-end
-
-local function DDAddEditBoxNum(opt, func, arg2)
-    dewdrop:AddLine( 'text', L["Opt_" .. opt],
-        'hasArrow', true,
-        'hasEditBox', true,
-        'editBoxText', db[ opt ],
-        'editBoxFunc', func or SetDBNum,
-        'editBoxArg1', opt,
-        'editBoxArg2', arg2,
-        'tooltipTitle', "TinyTip",
-        'tooltipText', L["Desc_" .. opt]
-    )
+local function seti(info,value)
+    db = core:GetDB()
+    value = tonumber(value)
+    value = value - 1
+    if value < 1 then value = nil end
+    db[info[#info]] = value
+    core:ReInitialize()
 end
 
 local function DDAddRadioBoxes(opt, map, func, default)
@@ -86,219 +92,201 @@ local function DDAddRadioBoxes(opt, map, func, default)
     end
 end
 
-local function DDAddScale(opt, func, default)
-    dewdrop:AddLine( 'text', L["Opt_" .. opt],
-        'hasArrow', true,
-        'hasSlider', true,
-        'sliderMin', 0.01,
-        'sliderMax', 2.0,
-        'sliderIsPercent', true,
-        'sliderValue', db[opt] or default or 1.0,
-        'sliderFunc', func or SetDBNum,
-        'sliderArg1', opt,
-        'tooltipTitle', "TinyTip",
-        'tooltipText', L["Desc_" .. opt]
-    )
+local function createToggle(opt, order)
+    return {
+        type = "toggle",
+        order = order,
+        get = get,
+        set = toggle,
+        name = L["Opt_" .. opt],
+        desc = L["Desc_" .. opt],
+    }
 end
 
-function module.CreateDDMenu(level,value)
-    db = core:GetDB()
-    if not db then return end
+local function createNumInput(opt, order)
+    return {
+        type = "input",
+        order = order,
+        get = getnum,
+        set = setnum,
+        name = L["Opt_" .. opt],
+        desc = L["Desc_" .. opt],
+    }
+end
 
-    if level == 1 then
-        dewdrop:AddLine( 'text', title,
-            'isTitle', true
-        )
+local function createSelection(opt, order, map, default)
+    for _,v in ipairs(map) do
+        if L[v] then v = L[v] end
+    end
+    table.insert(map, 1, default)
 
-        DDAddArrow("Main_Anchor")
-        DDAddArrow("Main_Text")
-        DDAddArrow("Main_Appearance")
-        DDAddArrow("Main_Targets")
-        dewdrop:AddLine()
-        dewdrop:AddLine('text', L.Opt_Profiles,
-        'checked', core:GetCurrentProfile() ~= "global",
-        'func', core.ToggleSetProfile,
-        'arg1', core,
-        'tooltipTitle', "TinyTip",
-        'tooltipText', L.Desc_Profiles
-        )
+    return {
+        type = "select",
+        order = order,
+        get = geti,
+        set = seti,
+        name = L["Opt_" .. opt],
+        desc = L["Desc_" .. opt],
+        values = map,
+    }
+end
 
-        dewdrop:AddLine()
+local function createRange(opt, order, min, max, ispercent)
+    return {
+        type = "range",
+        order = order,
+        get = getnum,
+        set = setnum,
+        name = L["Opt_" .. opt],
+        desc = L["Desc_" .. opt],
+        min = min,
+        max = max,
+        isPercent = ispercent,
+    }
+end
 
-        dewdrop:AddLine('text', L.Opt_Main_Default,
-            'textR', 1, 'textG', 0.4, 'textB', 0.4,
-            'func', core.ResetDatabase,
-            'arg1', core,
-            'tooltipTitle', "TinyTip",
-            'tooltipText', L.Desc_Main_Default
-        )
+local options
+function module:Initialize()
+    if not options then
+        options = {
+            type = "group",
+            name = title,
+            args = {
+                positioning = {
+                    type = "group",
+                    order = 2,
+                    name = L["Opt_Main_Anchor"],
+                    desc = L["Desc_Main_Anchor"],
+                    args = {
+                        ["MAnchor"] = {
+                            type = "select",
+                            order = 2,
+                            get = get,
+                            set = set,
+                            name = L["Opt_MAnchor"],
+                            desc = L["Desc_MAnchor"],
+                            values = setmetatable({
+                                    ["GAMEDEFAULT"] = L.GameDefault,
+                                    ["CURSOR"] = L.CURSOR,
+                                    }, {__index = L.Map_Anchor}),
+                        },
+                        ["MOffX"] = createNumInput("MOffX", 3),
+                        ["MOffY"] = createNumInput("MOffY", 4),
+                        ["FAnchor"] = {
+                            type = "select",
+                            order = 5,
+                            get = get,
+                            set = set,
+                            name = L["Opt_FAnchor"],
+                            desc = L["Desc_FAnchor"],
+                            values = setmetatable({
+                                    ["GAMEDEFAULT"] = L.GameDefault,
+                                    ["CURSOR"] = L.CURSOR,
+                                    ["SMART"] = L.SMART,
+                                    }, {__index = L.Map_Anchor}),
+                        },
+                        ["FOffX"] = createNumInput("FOffX", 6),
+                        ["FOffY"] = createNumInput("FOffX", 7),
+                    }, -- args
+                }, -- positioning
 
-    elseif level == 2 then
-        if value == "Main_Anchor" then
+                basic = {
+                    type = "group",
+                    order = 3,
+                    name = L["Opt_Main_Text"],
+                    desc = L["Desc_Main_Text"],
+                    args = {
+                        ["PvPRankText"] = createSelection("PvPRankText", 2, L.Map_PvPRankText, L.TinyTipDefault),
+                        ["HideRace"] = createToggle("HideRace", 3),
+                        ["HideNPCType"] = createToggle("HideNPCType", 4),
+                        ["KeyElite"] = createToggle("KeyElite", 5),
+                        ["ReactionText"] = createToggle("ReactionText", 6),
+                        ["LevelGuess"] = createToggle("LevelGuess", 7),
+                        ["KeyServer"] = createToggle("Keyserver", 8),
+                    },
+                }, -- basic
 
-            DDAddArrow("MAnchor")
-            DDAddEditBoxNum("MOffX")
-            DDAddEditBoxNum("MOffY")
+                appearance = {
+                    type = "group",
+                    order = 4,
+                    name = L["Opt_Main_Appearance"],
+                    desc = L["Desc_Main_Appearance"],
+                    args = {
+                        ["Scale"] = createRange("Scale", 2, 0.01, 1.0, true),
+                        ["BGColor"] = createSelection("BGColor", 3, L.Map_BGColor, L.TinyTipDefault),
+                        ["Border"] = createSelection("Border", 4, L.Map_Border, L.TinyTipDefault),
+                        ["ColourFriends"] = createSelection("ColourFriends", 5, L.Map_ColourFriends, L.TinyTipDefault),
+                        ["HideInFrames"] = createToggle("HideInFrames", 6),
+                        ["HideInCombat"] = createToggle("HideInCombat", 7),
+                    },
+                }, -- appearance
 
-            dewdrop:AddLine()
+                targets = {
+                    type = "group",
+                    order = 5,
+                    name = L["Opt_Main_Targets"],
+                    desc = L["Desc_Main_Targets"],
+                    args = {
+                        ["TargetsTooltipUnit"] = createSelection("TargetsTooltipUnit", 2, L.Map_TargetsTooltipUnit, L.TinyTipDefault),
+                        ["TargetsParty"] = createSelection("TargetsParty", 3, L.Map_TargetsParty, L.TinyTipDefault),
+                        ["TargetsRaid"] = createSelection("TargetsRaid", 4, L.Map_TargetsRaid, L.TinyTipDefault),
+                        ["TargetsNoEventUpdate"] = createToggle("TargetsNoEventUpdate", 5),
+                    },
+                }, -- targets
 
-            DDAddArrow("FAnchor")
-            DDAddEditBoxNum("FOffX")
-            DDAddEditBoxNum("FOffY")
+                general = {
+                    type = "group",
+                    name = L["Main_General"],
+                    args = {
+                        profiles = {
+                            type = "toggle",
+                            get = function() return core:GetCurrentProfile() ~= "global" end,
+                            set = function() core:ToggleSetProfile() end,
+                            name = L["Opt_Profiles"],
+                            desc = L["Desc_Profiles"],
+                        },
+                        resetdb = {
+                            type = "execute",
+                            confirm = true,
+                            confirmText = L["ResetDB_Confirm"],
+                            func = function() core.ResetDatabase() end,
+                            name = L["Opt_Main_Default"],
+                            desc = L["Desc_Main_Default"],
+                        },
+                    },
+                },
+            } -- main args
+        }
 
-        elseif value == "Main_Text" then
+        config:RegisterOptionsTable("TinyTip", {
+            name = core.localizedname,
+            type = "group",
+            args = {
+                help = {
+                    type = "description",
+                    name = L["WhatIsTinyTip"],
+                },
+            },
+        })
+        dialog:SetDefaultSize("TinyTip", 600, 400)
+        dialog:AddToBlizOptions("TinyTip", "TinyTip")
 
-            DDAddArrow("PvPRankText")
+        config:RegisterOptionsTable("TinyTip-General", options.args.general)
+        dialog:AddToBlizOptions("TinyTip-General", options.args.general.name, "TinyTip")
 
-            dewdrop:AddLine()
+        config:RegisterOptionsTable("TinyTipPositioning", options.args.positioning)
+        dialog:AddToBlizOptions("TinyTipPositioning", options.args.positioning.name, "TinyTip")
 
-            DDAddChecked("HideRace")
-            DDAddChecked("HideNPCType")
-            DDAddChecked("KeyElite")
-            DDAddChecked("ReactionText")
-            DDAddChecked("LevelGuess")
-            DDAddChecked("KeyServer")
+        config:RegisterOptionsTable("TinyTipBasic", options.args.basic)
+        dialog:AddToBlizOptions("TinyTipBasic", options.args.basic.name, "TinyTip")
 
-        elseif value == "Main_Appearance" then
+        config:RegisterOptionsTable("TinyTip-Appearance", options.args.appearance)
+        dialog:AddToBlizOptions("TinyTip-Appearance", options.args.appearance.name, "TinyTip")
 
-            DDAddScale("Scale")
-            DDAddArrow("BGColor")
-            DDAddArrow("Border")
-            DDAddArrow("ColourFriends")
-
-            dewdrop:AddLine()
-
-            DDAddChecked("HideInFrames")
-            DDAddChecked("HideInCombat")
-
-        elseif value == "Main_Targets" then
-
-            DDAddArrow("TargetsTooltipUnit")
-            DDAddArrow("TargetsParty")
-            DDAddArrow("TargetsRaid")
-        end
-    elseif level == 3 then
-        local k,v
-        if value == "MAnchor" then
-            dewdrop:AddLine('text', L.GameDefault,
-                'isRadio', true,
-                'checked', db["MAnchor"] == "GAMEDEFAULT",
-                'func', SetDB,
-                'arg1', "MAnchor",
-                'arg2', "GAMEDEFAULT"
-            )
-
-            dewdrop:AddLine('text', L.CURSOR,
-                'isRadio', true,
-                'checked', not db["MAnchor"],
-                'func', SetDB,
-                'arg1', "MAnchor"
-            )
-
-            for k,v in pairs(L.Map_Anchor) do
-                dewdrop:AddLine('text', L[v] or v,
-                    'isRadio', true,
-                    'checked', db["MAnchor"] == k,
-                    'func', SetDB,
-                    'arg1', "MAnchor",
-                    'arg2', k
-                )
-            end
-        elseif value == "FAnchor" then
-            dewdrop:AddLine('text', L.GameDefault,
-                'isRadio', true,
-                'checked', not db["FAnchor"],
-                'func', SetDB,
-                'arg1', "FAnchor"
-            )
-
-            dewdrop:AddLine('text', L.SMART,
-                'isRadio', true,
-                'checked', db["FAnchor"] == "SMART",
-                'func', SetDB,
-                'arg1', "FAnchor",
-                'arg2', "SMART"
-            )
-
-            dewdrop:AddLine('text', L.CURSOR,
-                'isRadio', true,
-                'checked', db["FAnchor"] == "CURSOR",
-                'func', SetDB,
-                'arg1', "FAnchor",
-                'arg2', "CURSOR"
-            )
-
-            for k,v in pairs(L.Map_Anchor) do
-                dewdrop:AddLine('text', L[v] or v,
-                    'isRadio', true,
-                    'checked', db["FAnchor"] == k,
-                    'func', SetDB,
-                    'arg1', "FAnchor",
-                    'arg2', k
-                )
-            end
-        elseif value == "PvPRankText" then
-            DDAddRadioBoxes(value,
-                L.Map_PvPRankText,
-                nil,
-                L.TinyTipDefault
-            )
-        elseif value == "BGColor" then
-            DDAddRadioBoxes(value,
-                L.Map_BGColor,
-                nil,
-                L.TinyTipDefault
-            )
-        elseif value == "Border" then
-            DDAddRadioBoxes(value,
-                L.Map_Border,
-                nil,
-                L.TinyTipDefault
-            )
-        elseif value == "ColourFriends" then
-            DDAddRadioBoxes(value,
-                L.Map_ColourFriends,
-                nil,
-                L.TinyTipDefault
-            )
-        elseif value == "TargetsTooltipUnit" then
-            DDAddRadioBoxes(value,
-                L.Map_TargetsTooltipUnit,
-                nil,
-                L.TinyTipDefault
-            )
-        elseif value == "TargetsParty" then
-            DDAddRadioBoxes(value,
-                L.Map_TargetsParty,
-                nil,
-                L.TinyTipDefault
-            )
-        elseif value == "TargetsRaid" then
-            DDAddRadioBoxes(value,
-                L.Map_TargetsRaid,
-                nil,
-                L.TinyTipDefault
-            )
-        end
+        config:RegisterOptionsTable("TinyTipTargets", options.args.targets)
+        dialog:AddToBlizOptions("TinyTipTargets", options.args.targets.name, "TinyTip")
     end
 end
 
 function module:Show()
-    if not dewdrop then
-        dewdrop = _G.AceLibrary:GetInstance("Dewdrop-2.0")
-    end
-
-    -- open up options window
-    if not ddframe then
-        ddframe = CreateFrame("Frame", nil, UIParent)
-        ddframe:SetWidth(2)
-        ddframe:SetHeight(2)
-        ddframe:SetPoint("BOTTOMLEFT", GetCursorPosition())
-        ddframe:SetClampedToScreen(true)
-        dewdrop:Register(ddframe, 'dontHook', true, 'children', self.CreateDDMenu )
-    end
-    local x,y = GetCursorPosition()
-    ddframe:SetPoint("BOTTOMLEFT", x / UIParent:GetScale(), y / UIParent:GetScale())
-    dewdrop:Open(ddframe)
 end
-
