@@ -21,7 +21,7 @@ local UnitClass, UnitIsPlayer = UnitClass, UnitIsPlayer
 local L = _G.TinyTipLocale
 local classColours, hooks, origfuncs
 local EventFrame
-local db
+local db, _
 
 --[[----------------------------------------------------------------------
 -- Quick Localization
@@ -38,6 +38,7 @@ else...
 -- Module Initialization
 ------------------------------------------------------------------------]]
 
+local core
 local name, localizedname = GetAddOnInfo("TinyTip")
 core = DongleStub("Dongle-1.0"):New(name)
 core.name, core.localizedname = name, localizedname or name
@@ -178,26 +179,6 @@ end
 -- Database Functions
 ------------------------------------------------------------------------]]
 
-local function showoptionsgui()
-    local self = core
-    if not TinyTipOptions then
-        local loaded, reason = LoadAddOn("TinyTipOptions")
-        if loaded then
-            if TinyTipOptions and TinyTipOptions.Show then
-                TinyTipOptions:Show()
-            else
-                self:Print(self.localizedname .. ": Old version of TinyTipOptions. Please update.")
-            end
-        elseif reason then
-            self:Print(self.localizedname .. ": LoadOnDemand Error - " .. reason)
-        end
-    elseif TinyTipOptions.Show then
-        TinyTipOptions:Show()
-    else
-        self:Print(self.localizedname .. ": Old version of TinyTipOptions. Please update.")
-    end
-end
-
 function core:GetDB()
     return self.db.profile
 end
@@ -244,6 +225,7 @@ function core:ReInitialize()
         EventFrame:SetScript("OnShow", nil)
         -- EventFrame:SetScript("OnHide", nil)
     end
+
     for name,module in self:IterateModules() do
         if module.ReInitialize then
             module:ReInitialize(dbp)
@@ -334,10 +316,25 @@ function core:Enable()
         end
     end
 
+    local enabled, loadable = select(4, GetAddOnInfo("TinyTipOptions"))
+    if enabled and loadable then
+        local hijack = CreateFrame("Frame", nil, InterfaceOptionsFrame)
+        hijack:SetScript("OnShow", function()
+            hijack:Hide()
+            local _, reason = LoadAddOn("TinyTipOptions")
+            local _, title = GetAddOnInfo("TinyTipOptions")
+            if reason then
+                self:Print( title .. " (Enable) LoadOnDemand Error - " .. reason )
+            else
+                --self:Print( "Loaded " .. title)
+            end
+        end)
+    end
+
     _G["SLASH_TINYTIP1"] = "/" .. string.lower(self.name)
     _G["SLASH_TINYTIP2"] = "/" .. string.upper(self.localizedname)
     _G["SLASH_TINYTIP3"] = "/" .. string.lower(self.localizedname)
     _G["SLASH_TINYTIP4"] = "/" .. slash2
-    _G.SlashCmdList["TINYTIP"] = showoptionsgui
+    _G.SlashCmdList["TINYTIP"] = InterfaceOptionsFrame:Show()
 end
 
