@@ -21,6 +21,9 @@ if not TinyTipDB or not TinyTipDB.configured then
                                                 -- 2 will disable this option.
                 ["TargetsRaid"] = nil,          -- nil, 1
                                                 -- The default (nil) is enabled.
+                ["TargetsNoEventUpdate"] = nil  -- nil, true
+                                                -- The default (nil) enables dynamic changing of
+                                                -- targets in the tooltip via UNIT_TARGET.
     }
 
     TinyTip_StandAloneDB =  (TinyTip_StandAloneDB and setmetatable(t, {__index=TinyTip_StandAloneDB})) or t

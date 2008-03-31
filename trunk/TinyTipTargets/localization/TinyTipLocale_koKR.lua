@@ -23,4 +23,7 @@ TinyTipLocale = setmetatable({
     ["PARTY"] = string.format("명의 %s", TUTORIAL_TITLE19),
     ["RAID"] = string.format("명의 %s원", RAID),
     ["Unknown"] = "알수없음",
+    [" (F)"] = " (*)",
+    [" (MT)"] = " (!)",
+    [" (MA)"] = " <<",
 }, {__index=TinyTipLocale})
