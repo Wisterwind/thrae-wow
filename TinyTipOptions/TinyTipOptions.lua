@@ -24,6 +24,7 @@ local module = core:NewModule("TinyTipOptions")
 local defaults = {
     ["MAnchor"] = "CURSOR",
     ["FAnchor"] = "GAMEDEFAULT",
+    ["Scale"] = 1.0,
 }
 
 local function toggle(info)
@@ -35,7 +36,8 @@ end
 
 local function get(info)
     db = core:GetDB()
-    return db[info[#info]]
+    local k = info[#info]
+    return db[k] or defaults[k]
 end
 
 local function set(info,value)
@@ -55,7 +57,12 @@ end
 
 local function setnum(info,value)
     db = core:GetDB()
-    db[info[#info]] = tonumber(value)
+    local k = info[#info]
+    value = tonumber(value)
+    if value and value == defaults[k] then
+        value = nil
+    end
+    db[k] = tonumber(value)
     core:ReInitialize()
 end
 
@@ -148,6 +155,20 @@ end
 local options
 function module:Initialize()
     if not options then
+        local Map_MAnchor = {
+            ["GAMEDEFAULT"] = L.GameDefault,
+            ["CURSOR"] = L.CURSOR,
+        }
+        local Map_FAnchor = {
+            ["GAMEDEFAULT"] = L.GameDefault,
+            ["CURSOR"] = L.CURSOR,
+            ["SMART"] = L.SMART,
+        }
+        for k,v in pairs(L.Map_Anchor) do
+            Map_MAnchor[k] = v
+            Map_FAnchor[k] = v
+        end
+
         options = {
             type = "group",
             name = title,
@@ -165,10 +186,7 @@ function module:Initialize()
                             set = set,
                             name = L["Opt_MAnchor"],
                             desc = L["Desc_MAnchor"],
-                            values = setmetatable({
-                                    ["GAMEDEFAULT"] = L.GameDefault,
-                                    ["CURSOR"] = L.CURSOR,
-                                    }, {__index = L.Map_Anchor}),
+                            values = Map_MAnchor,
                         },
                         ["MOffX"] = createNumInput("MOffX", 3),
                         ["MOffY"] = createNumInput("MOffY", 4),
@@ -179,11 +197,7 @@ function module:Initialize()
                             set = set,
                             name = L["Opt_FAnchor"],
                             desc = L["Desc_FAnchor"],
-                            values = setmetatable({
-                                    ["GAMEDEFAULT"] = L.GameDefault,
-                                    ["CURSOR"] = L.CURSOR,
-                                    ["SMART"] = L.SMART,
-                                    }, {__index = L.Map_Anchor}),
+                            values = Map_FAnchor,
                         },
                         ["FOffX"] = createNumInput("FOffX", 6),
                         ["FOffY"] = createNumInput("FOffX", 7),
@@ -202,7 +216,7 @@ function module:Initialize()
                         ["KeyElite"] = createToggle("KeyElite", 5),
                         ["ReactionText"] = createToggle("ReactionText", 6),
                         ["LevelGuess"] = createToggle("LevelGuess", 7),
-                        ["KeyServer"] = createToggle("Keyserver", 8),
+                        ["KeyServer"] = createToggle("KeyServer", 8),
                     },
                 }, -- basic
 
@@ -236,6 +250,7 @@ function module:Initialize()
 
                 general = {
                     type = "group",
+                    order = 1,
                     name = L["Main_General"],
                     args = {
                         profiles = {
@@ -247,6 +262,7 @@ function module:Initialize()
                         },
                         resetdb = {
                             type = "execute",
+                            order = 1,
                             confirm = true,
                             confirmText = L["ResetDB_Confirm"],
                             func = function() core.ResetDatabase() end,
